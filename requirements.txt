@@ -1,0 +1,7 @@
+Django
+Pillow
+python-dateutil
+django-crispy-forms
+crispy-bootstrap5
+django-filter
+django-widget-tweaks 

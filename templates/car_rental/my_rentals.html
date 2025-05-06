@@ -1,0 +1,271 @@
+{% extends 'base/base.html' %}
+
+{% block title %}我的订单 - 智能租车系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold"><i class="fas fa-list-alt me-2 text-primary"></i>我的订单</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">我的订单</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 侧边栏 -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-user-circle me-2"></i>{{ user.username }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-id-card me-2"></i>个人资料
+                        </a>
+                        <a href="{% url 'car_rental:my_rentals' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-list-alt me-2"></i>我的订单
+                        </a>
+                        <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-key me-2"></i>修改密码
+                        </a>
+                        <a href="{% url 'car_rental:my_reviews' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-comment-alt me-2"></i>我的评价
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 订单统计 -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2"></i>订单统计</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="p-2 border rounded">
+                                <h3 class="text-primary mb-0">{{ orders_completed }}</h3>
+                                <p class="text-muted small mb-0">已完成</p>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="p-2 border rounded">
+                                <h3 class="text-warning mb-0">{{ orders_ongoing }}</h3>
+                                <p class="text-muted small mb-0">进行中</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded">
+                                <h3 class="text-success mb-0">{{ orders_upcoming }}</h3>
+                                <p class="text-muted small mb-0">未开始</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded">
+                                <h3 class="text-secondary mb-0">{{ orders_cancelled }}</h3>
+                                <p class="text-muted small mb-0">已取消</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 订单列表 -->
+        <div class="col-lg-9">
+            {% if rentals %}
+            <!-- 订单列表 -->
+            <div class="card shadow-sm">
+                <div class="list-group list-group-flush">
+                    {% for rental in rentals %}
+                    <div class="list-group-item p-0">
+                        <div class="d-flex p-3 border-start border-5 {% if rental.status == 'completed' %}border-success{% elif rental.status == 'ongoing' %}border-primary{% elif rental.status == 'cancelled' %}border-danger{% else %}border-warning{% endif %}">
+                            <!-- 车辆图片 -->
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                {% if rental.car.image %}
+                                    <img src="{{ rental.car.image.url }}" alt="{{ rental.car.brand }} {{ rental.car.model }}" style="width: 120px; height: 80px; object-fit: cover;" class="rounded">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="width: 120px; height: 80px;">
+                                        <i class="fas fa-car text-secondary" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 订单信息 -->
+                            <div class="flex-grow-1 me-3">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="mb-1">{{ rental.car.brand }} {{ rental.car.model }}</h5>
+                                    <span class="badge {% if rental.status == 'completed' %}bg-success{% elif rental.status == 'ongoing' %}bg-primary{% elif rental.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ rental.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="mb-1 text-muted small">订单号：{{ rental.order_id }}</p>
+                                <div class="d-flex flex-wrap">
+                                    <span class="me-3 small"><i class="fas fa-calendar-alt me-1 text-primary"></i>{{ rental.start_date|date:"m-d H:i" }} 至 {{ rental.end_date|date:"m-d H:i" }}</span>
+                                    <span class="me-3 small"><i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ rental.pickup_location.city }}</span>
+                                    <span class="small"><i class="fas fa-money-bill-wave me-1 text-primary"></i>¥{{ rental.total_price }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 操作按钮 -->
+                            <div class="align-self-center">
+                                <a href="{% url 'car_rental:rental_detail' rental.order_id %}" class="btn btn-sm btn-outline-primary">详情</a>
+                                {% if rental.payment_status == 'pending' %}
+                                <a href="{% url 'car_rental:payment' rental.id %}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-credit-card me-1"></i>付款
+                                </a>
+                                {% endif %}
+                                {% if rental.status == 'pending' or rental.status == 'confirmed' %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelRentalModal" data-rental-id="{{ rental.id }}">取消</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- 分页 -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page=1" aria-label="First">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <!-- 无订单提示 -->
+            <div class="card shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-clipboard-list text-muted" style="font-size: 5rem;"></i>
+                    </div>
+                    <h4 class="card-title mb-3">暂无订单记录</h4>
+                    <p class="card-text mb-4">您还没有任何租车订单，赶快去浏览车辆并创建您的第一个订单吧！</p>
+                    <a href="{% url 'car_rental:car_list' %}" class="btn btn-primary">
+                        <i class="fas fa-car-side me-2"></i>去看看车辆
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 取消订单模态框 -->
+<div class="modal fade" id="cancelRentalModal" tabindex="-1" aria-labelledby="cancelRentalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelRentalModalLabel">取消订单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要取消此订单吗？</p>
+                <div class="alert alert-warning">
+                    <p><i class="fas fa-exclamation-triangle me-2"></i>请注意退款政策：</p>
+                    <ul class="mb-0">
+                        <li>取车前24小时以上取消：全额退款</li>
+                        <li>取车前12-24小时取消：退款80%</li>
+                        <li>取车前4-12小时取消：退款50%</li>
+                        <li>取车前4小时内取消：不予退款</li>
+                    </ul>
+                </div>
+                <form id="cancelRentalForm" action="{% url 'car_rental:cancel_rental' 0 %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">取消原因（选填）</label>
+                        <select class="form-select" id="cancel_reason" name="cancel_reason">
+                            <option value="">请选择</option>
+                            <option value="plans_changed">行程有变</option>
+                            <option value="found_better_option">找到更好的选择</option>
+                            <option value="price_concerns">价格考虑</option>
+                            <option value="emergency">紧急情况</option>
+                            <option value="other">其他原因</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cancel_comment" class="form-label">补充说明（选填）</label>
+                        <textarea class="form-control" id="cancel_comment" name="cancel_comment" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>关闭
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+                    <i class="fas fa-ban me-1"></i>确认取消
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 取消订单模态框
+        const cancelRentalModal = document.getElementById('cancelRentalModal');
+        const cancelRentalForm = document.getElementById('cancelRentalForm');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        
+        if (cancelRentalModal) {
+            cancelRentalModal.addEventListener('show.bs.modal', function(event) {
+                // 获取触发按钮
+                const button = event.relatedTarget;
+                // 获取订单ID
+                const rentalId = button.getAttribute('data-rental-id');
+                // 更新表单action
+                cancelRentalForm.action = cancelRentalForm.action.replace('/0/', '/' + rentalId + '/');
+            });
+            
+            // 确认取消按钮
+            confirmCancelBtn.addEventListener('click', function() {
+                cancelRentalForm.submit();
+            });
+        }
+    });
+</script>
+{% endblock %} 

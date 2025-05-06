@@ -1,0 +1,368 @@
+{% extends 'base/base.html' %}
+
+{% block title %}个人资料 - 智能租车系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(to right, #3498db, #2c3e50);
+        border-radius: 10px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 5px solid white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .profile-info-card {
+        height: 100%;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #666;
+    }
+    
+    .info-value {
+        font-weight: 400;
+    }
+    
+    .tab-pane {
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header shadow">
+    <div class="row align-items-center">
+        <div class="col-md-3 text-center text-md-start">
+            {% if user.profile.profile_picture %}
+                <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="profile-avatar">
+            {% else %}
+                <div class="profile-avatar d-flex align-items-center justify-content-center bg-light text-primary">
+                    <i class="fas fa-user fa-3x"></i>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-9">
+            <h2 class="mb-1">{{ user.username }}</h2>
+            <p class="mb-2">
+                {% if user.email %}
+                    <i class="fas fa-envelope me-2"></i>{{ user.email }}
+                {% endif %}
+                {% if user.profile.phone_number %}
+                    <span class="mx-2">|</span>
+                    <i class="fas fa-phone me-2"></i>{{ user.profile.phone_number }}
+                {% endif %}
+            </p>
+            <p class="mb-3">
+                <span class="badge bg-light text-dark">
+                    {% if user.profile.user_type == 'admin' or user.is_staff %}
+                        <i class="fas fa-user-shield me-1"></i>管理员
+                    {% else %}
+                        <i class="fas fa-user me-1"></i>普通用户
+                    {% endif %}
+                </span>
+                
+                <span class="badge bg-light text-dark ms-2">
+                    <i class="fas fa-clock me-1"></i>注册于 {{ user.date_joined|date:"Y年m月d日" }}
+                </span>
+            </p>
+            <a href="{% url 'accounts:edit_profile' %}" class="btn btn-light">
+                <i class="fas fa-edit me-2"></i>编辑资料
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow profile-info-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-user-circle me-2"></i>个人信息</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="info-label">用户名</div>
+                    <div class="info-value">{{ user.username }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="info-label">姓名</div>
+                    <div class="info-value">
+                        {% if user.first_name or user.last_name %}
+                            {{ user.last_name }}{{ user.first_name }}
+                        {% else %}
+                            <span class="text-muted">未设置</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="info-label">电子邮箱</div>
+                    <div class="info-value">
+                        {% if user.email %}
+                            {{ user.email }}
+                        {% else %}
+                            <span class="text-muted">未设置</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="info-label">电话号码</div>
+                    <div class="info-value">
+                        {% if user.profile.phone_number %}
+                            {{ user.profile.phone_number }}
+                        {% else %}
+                            <span class="text-muted">未设置</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="info-label">地址</div>
+                    <div class="info-value">
+                        {% if user.profile.address %}
+                            {{ user.profile.address }}
+                        {% else %}
+                            <span class="text-muted">未设置</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="rentals-tab" data-bs-toggle="tab" data-bs-target="#rentals" type="button" role="tab" aria-controls="rentals" aria-selected="true">
+                            <i class="fas fa-car me-1"></i>我的租车
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
+                            <i class="fas fa-id-card me-1"></i>证件信息
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="false">
+                            <i class="fas fa-shield-alt me-1"></i>账户安全
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="profileTabContent">
+                    <!-- 租车记录标签页 -->
+                    <div class="tab-pane fade show active" id="rentals" role="tabpanel" aria-labelledby="rentals-tab">
+                        <h5 class="border-bottom pb-2 mb-3">最近租车记录</h5>
+                        
+                        {% if user.rentals.all %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>订单编号</th>
+                                            <th>车辆</th>
+                                            <th>起止时间</th>
+                                            <th>金额</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for rental in user.rentals.all|slice:":5" %}
+                                            <tr>
+                                                <td>{{ rental.order_id|truncatechars:8 }}</td>
+                                                <td>{{ rental.car.brand }} {{ rental.car.model }}</td>
+                                                <td>
+                                                    <small>
+                                                        {{ rental.start_date|date:"Y-m-d H:i" }} 至 <br>
+                                                        {{ rental.end_date|date:"Y-m-d H:i" }}
+                                                    </small>
+                                                </td>
+                                                <td>¥{{ rental.total_price }}</td>
+                                                <td>
+                                                    {% if rental.status == 'pending' %}
+                                                        <span class="badge bg-warning">待处理</span>
+                                                    {% elif rental.status == 'confirmed' %}
+                                                        <span class="badge bg-info">已确认</span>
+                                                    {% elif rental.status == 'ongoing' %}
+                                                        <span class="badge bg-primary">进行中</span>
+                                                    {% elif rental.status == 'completed' %}
+                                                        <span class="badge bg-success">已完成</span>
+                                                    {% elif rental.status == 'cancelled' %}
+                                                        <span class="badge bg-danger">已取消</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'car_rental:rental_detail' rental.order_id %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="text-center">
+                                <a href="{% url 'car_rental:my_rentals' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-list me-1"></i>查看全部
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>您还没有租车记录，立即 <a href="{% url 'car_rental:car_list' %}" class="alert-link">浏览车辆</a> 开始您的租车之旅吧！
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 证件信息标签页 -->
+                    <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                        <h5 class="border-bottom pb-2 mb-3">证件信息</h5>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-id-card me-2"></i>身份证信息</h6>
+                                        {% if user.profile.id_card %}
+                                            <p>身份证号码：{{ user.profile.id_card }}</p>
+                                            <div class="alert alert-success">
+                                                <i class="fas fa-check-circle me-2"></i>身份证已验证
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-circle me-2"></i>您尚未提供身份证信息，为了确保您能顺利租车，请及时添加。
+                                            </div>
+                                            <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-plus me-1"></i>添加身份证
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-car me-2"></i>驾驶证信息</h6>
+                                        {% if user.profile.driver_license %}
+                                            <p>驾驶证号码：{{ user.profile.driver_license }}</p>
+                                            <div class="alert alert-success">
+                                                <i class="fas fa-check-circle me-2"></i>驾驶证已验证
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-circle me-2"></i>您尚未提供驾驶证信息，为了确保您能顺利租车，请及时添加。
+                                            </div>
+                                            <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-plus me-1"></i>添加驾驶证
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>根据相关法律法规，租车需要验证身份证及驾驶证信息，我们将确保您的信息安全并严格保密。
+                        </div>
+                    </div>
+                    
+                    <!-- 账户安全标签页 -->
+                    <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
+                        <h5 class="border-bottom pb-2 mb-3">账户安全</h5>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <i class="fas fa-lock me-2"></i>
+                                    <strong>密码</strong>
+                                </div>
+                                <a href="{% url 'accounts:password_change' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-key me-1"></i>修改密码
+                                </a>
+                            </div>
+                            <div class="alert alert-light">
+                                上次密码更新时间: 
+                                <strong>
+                                    {% if user.last_login %}
+                                        {{ user.last_login|date:"Y年m月d日" }}
+                                    {% else %}
+                                        从未更新过
+                                    {% endif %}
+                                </strong>
+                                <div class="mt-1 small text-muted">为了确保账户安全，建议定期更换密码。</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <i class="fas fa-envelope me-2"></i>
+                                    <strong>邮箱验证</strong>
+                                </div>
+                                {% if user.email %}
+                                    <span class="badge bg-success">已验证</span>
+                                {% else %}
+                                    <a href="{% url 'accounts:edit_profile' %}" class="btn btn-sm btn-outline-warning">
+                                        <i class="fas fa-envelope me-1"></i>添加邮箱
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="alert alert-light">
+                                {% if user.email %}
+                                    您的邮箱 <strong>{{ user.email }}</strong> 已验证。
+                                {% else %}
+                                    您尚未添加邮箱，添加邮箱可以提高账户安全性，并在忘记密码时用于找回。
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <i class="fas fa-mobile-alt me-2"></i>
+                                    <strong>手机验证</strong>
+                                </div>
+                                {% if user.profile.phone_number %}
+                                    <span class="badge bg-success">已验证</span>
+                                {% else %}
+                                    <a href="{% url 'accounts:edit_profile' %}" class="btn btn-sm btn-outline-warning">
+                                        <i class="fas fa-mobile-alt me-1"></i>添加手机
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="alert alert-light">
+                                {% if user.profile.phone_number %}
+                                    您的手机 <strong>{{ user.profile.phone_number }}</strong> 已验证。
+                                {% else %}
+                                    您尚未添加手机号，添加手机号可以提高账户安全性，并用于接收重要通知。
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-shield-alt me-2"></i>为保障账户安全，请勿将账户信息泄露给他人，并定期更换密码。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

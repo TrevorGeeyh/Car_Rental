@@ -1,0 +1,146 @@
+{% extends 'base/base.html' %}
+
+{% block title %}我的评价 - 智能租车系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mt-3 mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+            <li class="breadcrumb-item active" aria-current="page">我的评价</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 侧边栏 -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-user-circle me-2"></i>{{ user.username }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-id-card me-2"></i>个人资料
+                        </a>
+                        <a href="{% url 'car_rental:my_rentals' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-list-alt me-2"></i>我的订单
+                        </a>
+                        <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-key me-2"></i>修改密码
+                        </a>
+                        <a href="{% url 'car_rental:my_reviews' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-comment-alt me-2"></i>我的评价
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 评价统计 -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2"></i>评价统计</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="p-2 border rounded">
+                                <h3 class="text-primary mb-0">{{ reviews.count }}</h3>
+                                <p class="text-muted small mb-0">已发表</p>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="p-2 border rounded">
+                                <h3 class="text-success mb-0">{{ completed_rentals.count }}</h3>
+                                <p class="text-muted small mb-0">待评价</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 评价内容 -->
+        <div class="col-lg-9">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h4 class="card-title mb-0"><i class="fas fa-comment-dots me-2 text-primary"></i>我的评价</h4>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                            <div class="mb-4 pb-4 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="mb-0">{{ review.car.brand }} {{ review.car.model }}</h5>
+                                    <div>
+                                        <span class="badge bg-primary">{{ review.get_rating_display }}</span>
+                                        <small class="text-muted ms-2">评价于 {{ review.created_at|date:"Y-m-d H:i" }}</small>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="mb-2">{{ review.comment|linebreaksbr }}</p>
+                                <div class="d-flex align-items-center">
+                                    <a href="{% url 'car_rental:rental_detail' review.rental.order_id %}" class="btn btn-sm btn-outline-primary">查看订单</a>
+                                    <a href="{% url 'car_rental:car_detail' review.car.id %}" class="btn btn-sm btn-outline-secondary ms-2">查看车辆</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>您还没有发表过评价。
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 待评价订单 -->
+            {% if completed_rentals %}
+                <div class="card shadow">
+                    <div class="card-header bg-white">
+                        <h4 class="card-title mb-0"><i class="fas fa-star-half-alt me-2 text-warning"></i>待评价订单</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>订单编号</th>
+                                        <th>车辆</th>
+                                        <th>租用日期</th>
+                                        <th>完成时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rental in completed_rentals %}
+                                        <tr>
+                                            <td>{{ rental.order_id|truncatechars:8 }}</td>
+                                            <td>{{ rental.car.brand }} {{ rental.car.model }}</td>
+                                            <td>{{ rental.start_date|date:"Y-m-d" }} 至 {{ rental.end_date|date:"Y-m-d" }}</td>
+                                            <td>{{ rental.updated_at|date:"Y-m-d H:i" }}</td>
+                                            <td>
+                                                <a href="{% url 'car_rental:review_rental' rental.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-star me-1"></i>去评价
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

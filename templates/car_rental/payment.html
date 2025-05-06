@@ -1,0 +1,291 @@
+{% extends 'base/base.html' %}
+
+{% block title %}支付订单 - 智能租车系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mt-3 mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:car_list' %}">车辆列表</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:car_detail' rental.car.id %}">{{ rental.car.brand }} {{ rental.car.model }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:confirm_rental' rental.id %}">确认订单</a></li>
+            <li class="breadcrumb-item active" aria-current="page">支付</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 订单信息摘要 -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>订单信息
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">订单编号</h6>
+                            <p class="fw-bold">{{ rental.order_id }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h6 class="text-muted">创建时间</h6>
+                            <p>{{ rental.created_at|date:"Y-m-d H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row align-items-center mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if rental.car.image %}
+                                <img src="{{ rental.car.image.url }}" alt="{{ rental.car.brand }} {{ rental.car.model }}" class="img-thumbnail" style="max-width: 80px;">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 60px;">
+                                    <i class="fas fa-car text-secondary"></i>
+                                </div>
+                            {% endif %}
+                            <div class="ms-3">
+                                <h5 class="mb-0">{{ rental.car.brand }} {{ rental.car.model }}</h5>
+                                <p class="text-muted mb-0">{{ rental.pickup_location.city }} 取车 | 租期 {{ rental_days }} 天</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                            <span class="fs-5 fw-bold">¥{{ rental.total_price }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-light">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                <span>取车时间：{{ rental.start_date|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            <div>
+                                <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                <span>{{ rental.pickup_location.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 支付方式选择 -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-credit-card me-2 text-primary"></i>选择支付方式</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="payment-options">
+                        <div class="form-check payment-option mb-3 p-0">
+                            <input class="form-check-input visually-hidden" type="radio" name="payment_method" id="wechat" value="wechat" checked>
+                            <label class="form-check-label d-block p-3 border rounded" for="wechat">
+                                <div class="d-flex align-items-center">
+                                    <div class="payment-icon bg-success bg-opacity-10 p-3 rounded me-3">
+                                        <i class="fab fa-weixin text-success fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">微信支付</h6>
+                                        <small class="text-muted">使用微信扫码完成支付</small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check payment-option mb-3 p-0">
+                            <input class="form-check-input visually-hidden" type="radio" name="payment_method" id="alipay" value="alipay">
+                            <label class="form-check-label d-block p-3 border rounded" for="alipay">
+                                <div class="d-flex align-items-center">
+                                    <div class="payment-icon bg-primary bg-opacity-10 p-3 rounded me-3">
+                                        <i class="fab fa-alipay text-primary fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">支付宝</h6>
+                                        <small class="text-muted">使用支付宝扫码完成支付</small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check payment-option mb-3 p-0">
+                            <input class="form-check-input visually-hidden" type="radio" name="payment_method" id="creditcard" value="creditcard">
+                            <label class="form-check-label d-block p-3 border rounded" for="creditcard">
+                                <div class="d-flex align-items-center">
+                                    <div class="payment-icon bg-info bg-opacity-10 p-3 rounded me-3">
+                                        <i class="fas fa-credit-card text-info fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">信用卡支付</h6>
+                                        <small class="text-muted">使用银联、Visa或MasterCard</small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 微信支付 -->
+                    <div id="wechat_payment" class="payment-form mt-4">
+                        <div class="text-center mb-3">
+                            <div class="qr-code-container mx-auto p-3 border rounded" style="width: 200px; height: 200px;">
+                                <img src="/static/images/wechat_qr_code_demo.png" alt="微信支付" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <p class="text-muted mt-2">请使用微信扫描二维码完成支付</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 支付宝 -->
+                    <div id="alipay_payment" class="payment-form mt-4 d-none">
+                        <div class="text-center mb-3">
+                            <div class="qr-code-container mx-auto p-3 border rounded" style="width: 200px; height: 200px;">
+                                <img src="/static/images/alipay_qr_code_demo.png" alt="支付宝" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <p class="text-muted mt-2">请使用支付宝扫描二维码完成支付</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 信用卡表单 -->
+                    <div id="creditcard_payment" class="payment-form mt-4 d-none">
+                        <div class="credit-card-form">
+                            <div class="mb-3">
+                                <label for="card_number" class="form-label">卡号</label>
+                                <input type="text" class="form-control" id="card_number" placeholder="1234 5678 9012 3456">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="expiry_date" class="form-label">有效期</label>
+                                    <input type="text" class="form-control" id="expiry_date" placeholder="MM/YY">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="cvv" class="form-label">安全码</label>
+                                    <input type="text" class="form-control" id="cvv" placeholder="123">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="card_name" class="form-label">持卡人姓名</label>
+                                <input type="text" class="form-control" id="card_name" placeholder="请输入持卡人姓名">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 支付按钮 -->
+                    <form method="post" action="{% url 'car_rental:payment' rental.id %}">
+                        {% csrf_token %}
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-lock me-2"></i>确认支付 ¥{{ rental.total_price }}
+                            </button>
+                            <p class="text-muted small text-center mt-2">
+                                点击按钮，表示您同意<a href="#" data-bs-toggle="modal" data-bs-target="#paymentTermsModal">《支付协议》</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 温馨提示 -->
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>温馨提示</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light mb-0">
+                        <p><i class="fas fa-shield-alt text-success me-2"></i>智能租车系统使用安全加密技术保护您的支付信息</p>
+                        <p><i class="fas fa-info-circle text-success me-2"></i>支付成功后，您将收到订单确认短信和邮件</p>
+                        <p><i class="fas fa-phone text-success me-2"></i>如遇支付问题，请拨打客服热线：400-123-4567</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 支付协议模态框 -->
+<div class="modal fade" id="paymentTermsModal" tabindex="-1" aria-labelledby="paymentTermsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentTermsModalLabel">支付协议</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>一、总则</h5>
+                <p>本支付协议阐述了用户使用本平台支付服务的条款和条件。</p>
+                
+                <h5>二、支付安全</h5>
+                <ol>
+                    <li>平台使用SSL加密技术保护用户的支付信息。</li>
+                    <li>用户应确保支付环境的安全，避免在公共WiFi等不安全网络下进行支付。</li>
+                    <li>用户应妥善保管个人支付账号、密码等敏感信息。</li>
+                </ol>
+                
+                <h5>三、支付方式</h5>
+                <ol>
+                    <li>平台支持多种支付方式，包括但不限于微信支付、支付宝、银联等。</li>
+                    <li>不同支付方式可能有不同的手续费率和处理时间。</li>
+                    <li>部分支付方式可能需要用户完成实名认证。</li>
+                </ol>
+                
+                <h5>四、退款政策</h5>
+                <ol>
+                    <li>用户可根据平台退款政策申请退款。</li>
+                    <li>退款将原路返回至用户支付账户。</li>
+                    <li>退款处理时间取决于支付机构，一般为1-7个工作日。</li>
+                </ol>
+                
+                <h5>五、争议解决</h5>
+                <p>因支付问题产生的争议，用户可联系客服解决。若无法达成一致，将按照中国相关法律法规处理。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">我已阅读并同意</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有支付方式单选按钮
+        const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+        
+        // 获取所有支付表单
+        const paymentForms = document.querySelectorAll('.payment-form');
+        
+        // 添加事件监听器，切换支付表单
+        paymentMethods.forEach(function(method) {
+            method.addEventListener('change', function() {
+                // 隐藏所有支付表单
+                paymentForms.forEach(function(form) {
+                    form.classList.add('d-none');
+                });
+                
+                // 显示选中的支付表单
+                const selectedForm = document.getElementById(this.value + '_payment');
+                if (selectedForm) {
+                    selectedForm.classList.remove('d-none');
+                }
+            });
+        });
+        
+        // 美化支付方式选择
+        const paymentOptions = document.querySelectorAll('.payment-option input');
+        paymentOptions.forEach(function(option) {
+            option.addEventListener('change', function() {
+                // 移除所有选中样式
+                document.querySelectorAll('.payment-option label').forEach(function(label) {
+                    label.classList.remove('border-primary');
+                });
+                
+                // 添加选中样式
+                if (this.checked) {
+                    this.nextElementSibling.classList.add('border-primary');
+                }
+            });
+        });
+        
+        // 初始化选中状态
+        document.querySelector('.payment-option input:checked').nextElementSibling.classList.add('border-primary');
+    });
+</script>
+{% endblock %} 

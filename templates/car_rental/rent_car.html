@@ -1,0 +1,512 @@
+{% extends 'base/base.html' %}
+
+{% block title %}租车 - {{ car.brand }} {{ car.model }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mt-3 mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:car_list' %}">车辆列表</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:car_detail' car.id %}">{{ car.brand }} {{ car.model }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">填写租车信息</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 左侧：租车表单 -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-car-side me-2"></i>租车信息
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 租车时间 -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-plus me-1 text-primary"></i>{{ form.start_date.label }}
+                                </label>
+                                {{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.start_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">请选择您的取车日期和时间</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.end_date.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-minus me-1 text-primary"></i>{{ form.end_date.label }}
+                                </label>
+                                {{ form.end_date }}
+                                {% if form.end_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.end_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">请选择您的还车日期和时间</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 取还车网点 -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="{{ form.pickup_location.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ form.pickup_location.label }}
+                                </label>
+                                {{ form.pickup_location }}
+                                {% if form.pickup_location.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.pickup_location.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.return_location.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-map-marker me-1 text-primary"></i>{{ form.return_location.label }}
+                                </label>
+                                {{ form.return_location }}
+                                {% if form.return_location.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.return_location.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 备注 -->
+                        <div class="mb-4">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-sticky-note me-1 text-primary"></i>{{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 驾驶人信息 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>驾驶人信息</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if user.profile.driver_license %}
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">姓名</label>
+                                            <input type="text" class="form-control" value="{{ user.get_full_name|default:user.username }}" readonly>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">联系电话</label>
+                                            <input type="text" class="form-control" value="{{ user.profile.phone_number|default:'未设置' }}" readonly>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">身份证号</label>
+                                            <input type="text" class="form-control" value="{{ user.profile.id_card }}" readonly>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">驾驶证号</label>
+                                            <input type="text" class="form-control" value="{{ user.profile.driver_license }}" readonly>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>您尚未完善驾驶证信息，请先在<a href="{% url 'accounts:edit_profile' %}" class="alert-link">个人资料</a>中完善相关信息。
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 用户协议 -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                我已阅读并同意<a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">《租车协议》</a>和<a href="#" data-bs-toggle="modal" data-bs-target="#insuranceModal">《保险条款》</a>
+                            </label>
+                            <div class="invalid-feedback">
+                                您必须同意条款才能继续
+                            </div>
+                        </div>
+                        
+                        <!-- 提交按钮 -->
+                        <div class="d-grid gap-2">
+                            {% if user.profile.driver_license %}
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-clipboard-check me-2"></i>提交订单
+                                </button>
+                            {% else %}
+                                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-warning btn-lg">
+                                    <i class="fas fa-user-edit me-2"></i>完善驾驶证信息
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'car_rental:car_detail' car.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>返回车辆详情
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧：车辆信息和费用明细 -->
+        <div class="col-lg-4">
+            <!-- 车辆信息 -->
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if car.image %}
+                            <img src="{{ car.image.url }}" alt="{{ car.brand }} {{ car.model }}" class="img-thumbnail me-3" style="width: 80px; height: 60px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 60px;">
+                                <i class="fas fa-car text-secondary"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="card-title mb-0">{{ car.brand }} {{ car.model }}</h5>
+                            <p class="text-muted mb-0">{{ car.category.name }}</p>
+                        </div>
+                    </div>
+                    <div class="row text-center g-2 mb-3">
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-car-side fs-5 text-primary"></i>
+                                <p class="small mb-0">{{ car.category.name }}</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-gas-pump fs-5 text-primary"></i>
+                                <p class="small mb-0">{{ car.get_fuel_type_display }}</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-cog fs-5 text-primary"></i>
+                                <p class="small mb-0">{{ car.get_transmission_display }}</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-users fs-5 text-primary"></i>
+                                <p class="small mb-0">{{ car.seats }}座</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 费用明细 -->
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>费用明细</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>日租金：</span>
+                        <span>¥{{ car.daily_rate }}/天</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>租期：</span>
+                        <span id="rental-days">-- 天</span>
+                    </div>
+                    {% if car.discount_rate %}
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>折扣：</span>
+                        <span>{{ car.discount_rate }}% OFF</span>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>基本保险：</span>
+                        <span>包含</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>押金：</span>
+                        <span>¥{{ car.deposit }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-0 fw-bold fs-5">
+                        <span>总计：</span>
+                        <span id="total-price">¥0.00</span>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2">*押金将在还车后退还</p>
+                </div>
+            </div>
+            
+            <!-- 优惠券/促销码 -->
+            <div class="card shadow mt-4">
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="输入优惠码">
+                        <button class="btn btn-outline-primary" type="button">应用</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 租车协议模态框 -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">租车协议</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>一、总则</h5>
+                <p>本协议是租车人与本公司就租用汽车事宜所订立的契约。</p>
+                
+                <h5>二、租车人资格</h5>
+                <ol>
+                    <li>年满18周岁，持有有效身份证件。</li>
+                    <li>持有有效驾驶证，驾龄满1年以上。</li>
+                    <li>提供有效信用卡信息作为担保。</li>
+                </ol>
+                
+                <h5>三、租车费用</h5>
+                <ol>
+                    <li>租金按日计算，超时按小时另行收费。</li>
+                    <li>租车人需交纳押金，还车时无违约情况全额退还。</li>
+                    <li>燃油费由租车人自行承担。</li>
+                </ol>
+                
+                <h5>四、租车人义务</h5>
+                <ol>
+                    <li>爱护租赁车辆，保持车况整洁。</li>
+                    <li>遵守交通法规，不得酒后驾驶。</li>
+                    <li>不得将车辆转借他人或用于非法活动。</li>
+                    <li>按时归还车辆至指定地点。</li>
+                </ol>
+                
+                <h5>五、违约责任</h5>
+                <ol>
+                    <li>车辆损坏由租车人负责修复或赔偿。</li>
+                    <li>逾期不还车，加收额外费用。</li>
+                    <li>违反交通法规导致的罚款由租车人承担。</li>
+                </ol>
+                
+                <h5>六、其他</h5>
+                <p>本协议未尽事宜，由双方友好协商解决，协商不成的，提交有管辖权的人民法院诉讼解决。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">我已阅读并同意</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 保险条款模态框 -->
+<div class="modal fade" id="insuranceModal" tabindex="-1" aria-labelledby="insuranceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="insuranceModalLabel">保险条款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>一、基本保险（包含在租金中）</h5>
+                <ol>
+                    <li>车辆损失险：保障因意外事故造成的车辆损失。</li>
+                    <li>第三者责任险：赔偿限额20万元。</li>
+                    <li>车上人员责任险：驾驶员5万元，乘客每人5万元。</li>
+                </ol>
+                
+                <h5>二、免责条款</h5>
+                <ol>
+                    <li>酒后、药后、无证驾驶造成的损失。</li>
+                    <li>故意行为造成的损失。</li>
+                    <li>违反交通法规导致的事故损失。</li>
+                    <li>车辆用于违法犯罪活动造成的损失。</li>
+                    <li>自然磨损、电器故障等非意外事故原因。</li>
+                </ol>
+                
+                <h5>三、理赔流程</h5>
+                <ol>
+                    <li>事故发生后立即报警并通知租车公司。</li>
+                    <li>保存现场证据，如照片、监控录像等。</li>
+                    <li>配合保险公司调查并提供真实信息。</li>
+                    <li>按要求填写相关理赔表格。</li>
+                </ol>
+                
+                <h5>四、其他说明</h5>
+                <p>本保险条款解释权归本公司所有，未尽事宜参照保险合同及相关法律法规执行。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">我已阅读并同意</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取相关元素
+        const startDateInput = document.getElementById('{{ form.start_date.id_for_label }}');
+        const endDateInput = document.getElementById('{{ form.end_date.id_for_label }}');
+        const rentalDaysElement = document.getElementById('rental-days');
+        const totalPriceElement = document.getElementById('total-price');
+        const rentalForm = document.querySelector('form.needs-validation');
+        const agreeTermsCheckbox = document.getElementById('agreeTerms');
+        
+        // 日租金
+        const dailyRate = {{ car.daily_rate }};
+        
+        // 折扣率（如果有）
+        const discountRate = {{ car.discount_rate|default:0 }};
+        
+        // 计算租期和总价
+        function calculatePrice() {
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            
+            // 检查日期是否有效
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                rentalDaysElement.textContent = '-- 天';
+                totalPriceElement.textContent = '¥0.00';
+                return;
+            }
+            
+            // 计算天数差
+            const diffTime = Math.abs(endDate - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // 至少租1天
+            const days = Math.max(1, diffDays);
+            rentalDaysElement.textContent = days + ' 天';
+            
+            // 计算总价
+            let total = days * dailyRate;
+            
+            // 应用折扣（如果有）
+            if (discountRate > 0) {
+                total = total * (1 - discountRate / 100);
+            }
+            
+            totalPriceElement.textContent = '¥' + total.toFixed(2);
+        }
+        
+        // 监听日期变化
+        startDateInput.addEventListener('change', calculatePrice);
+        endDateInput.addEventListener('change', calculatePrice);
+        
+        // 初始化最小日期（当前时间）
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        
+        const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+        startDateInput.setAttribute('min', minDateTime);
+        endDateInput.setAttribute('min', minDateTime);
+        
+        // 修改表单元素，添加novalidate属性
+        rentalForm.setAttribute('novalidate', true);
+
+        // 表单提交前验证
+        rentalForm.addEventListener('submit', function(event) {
+            // 阻止默认提交行为
+            event.preventDefault();
+            
+            // 检查日期是否有效
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            
+            // 调试信息
+            console.log('取车时间:', startDateInput.value, startDate);
+            console.log('还车时间:', endDateInput.value, endDate);
+            console.log('当前时间:', now);
+            
+            let isValid = true;
+            
+            // 验证开始日期
+            if (!startDateInput.value) {
+                alert('请选择取车时间');
+                isValid = false;
+                return;
+            }
+            
+            // 验证结束日期
+            if (!endDateInput.value) {
+                alert('请选择还车时间');
+                isValid = false;
+                return;
+            }
+            
+            // 验证结束日期不早于开始日期
+            if (endDate < startDate) {
+                alert('还车时间不能早于取车时间');
+                isValid = false;
+                return;
+            }
+            
+            // 验证用户协议
+            if (!agreeTermsCheckbox.checked) {
+                alert('您必须同意条款才能继续');
+                isValid = false;
+                return;
+            }
+            
+            // 如果验证通过，手动提交表单
+            if (isValid) {
+                // 格式化日期为Django期望的格式 (YYYY-MM-DD HH:MM:SS)
+                const formatDate = (date) => {
+                    return date.toISOString().replace('T', ' ').substring(0, 19);
+                };
+                
+                // 创建隐藏字段并添加到表单
+                const startDateHidden = document.createElement('input');
+                startDateHidden.type = 'hidden';
+                startDateHidden.name = 'start_date_formatted';
+                startDateHidden.value = formatDate(startDate);
+                
+                const endDateHidden = document.createElement('input');
+                endDateHidden.type = 'hidden';
+                endDateHidden.name = 'end_date_formatted';
+                endDateHidden.value = formatDate(endDate);
+                
+                rentalForm.appendChild(startDateHidden);
+                rentalForm.appendChild(endDateHidden);
+                
+                // 手动提交表单
+                rentalForm.submit();
+            }
+        });
+        
+        // 如果已有初始值，计算价格
+        calculatePrice();
+    });
+</script>
+{% endblock %} 

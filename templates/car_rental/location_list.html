@@ -1,0 +1,108 @@
+{% extends 'base/base.html' %}
+{% load custom_filters %}
+
+{% block title %}租车网点列表 - 智能租车系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold"><i class="fas fa-map-marker-alt me-2 text-primary"></i>租车网点</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">租车网点</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 城市快速导航 -->
+    {% if city_list %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-city me-2"></i>城市导航</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for city_item in cities_data %}
+                        <a href="#city-{{ city_item.name|slugify }}" class="btn btn-outline-primary">
+                            {{ city_item.name }} <span class="badge bg-primary">{{ city_item.count }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- 搜索框 -->
+    <div class="row mb-4">
+        <div class="col-md-6 mx-auto">
+            <form method="get" action="{% url 'car_rental:location_search' %}" class="d-flex">
+                <input type="text" name="query" class="form-control" placeholder="搜索网点名称或地址..." value="{{ search_query|default:'' }}">
+                <button type="submit" class="btn btn-primary ms-2">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 网点列表内容 -->
+    {% if locations_by_city %}
+        {% for city, locations in locations_by_city.items %}
+        <div class="row mb-5" id="city-{{ city|slugify }}">
+            <div class="col-12">
+                <h2 class="border-bottom pb-2 mb-4">
+                    <i class="fas fa-city me-2 text-primary"></i>{{ city }}
+                    <span class="badge bg-primary">{{ locations|length }}个网点</span>
+                </h2>
+            </div>
+            
+            {% for location in locations %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">{{ location.name }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <p class="card-text">
+                                <i class="fas fa-map-marker-alt me-2 text-primary"></i><strong>地址：</strong>{{ location.address }}
+                            </p>
+                            <p class="card-text">
+                                <i class="fas fa-phone me-2 text-primary"></i><strong>电话：</strong>{{ location.phone }}
+                            </p>
+                            <p class="card-text">
+                                <i class="fas fa-clock me-2 text-primary"></i><strong>营业时间：</strong>{{ location.business_hours }}
+                            </p>
+                        </div>
+                        <div class="d-flex justify-content-between mt-auto">
+                            <a href="{% url 'car_rental:location_detail' location.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-info-circle me-1"></i>查看详情
+                            </a>
+                            <a href="{% url 'car_rental:car_list' %}?location={{ location.id }}" class="btn btn-primary">
+                                <i class="fas fa-car me-1"></i>查看可用车辆
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="row">
+            <div class="col">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>暂无网点信息，敬请期待。
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

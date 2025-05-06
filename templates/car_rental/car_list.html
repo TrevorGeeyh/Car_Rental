@@ -1,0 +1,277 @@
+{% extends 'base/base.html' %}
+
+{% block title %}车辆列表 - 智能租车系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold"><i class="fas fa-car-side me-2 text-primary"></i>车辆列表</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">车辆列表</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 侧边栏筛选 -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-filter me-2"></i>筛选条件</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'car_rental:car_filter' %}">
+                        <!-- 车型类别 -->
+                        <div class="mb-3">
+                            <label for="category" class="form-label fw-bold">车型类别</label>
+                            <select name="category" id="category" class="form-select">
+                                <option value="">所有类型</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if filter_form.category.value|slugify == category.id|slugify %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- 取车位置 -->
+                        <div class="mb-3">
+                            <label for="location" class="form-label fw-bold">取车位置</label>
+                            <select name="location" id="location" class="form-select">
+                                <option value="">所有位置</option>
+                                {% for location in locations %}
+                                    <option value="{{ location.id }}" {% if filter_form.location.value|slugify == location.id|slugify %}selected{% endif %}>
+                                        {{ location.city }} - {{ location.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- 日期范围 -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">租车日期</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <input type="date" name="start_date" class="form-control" placeholder="取车日期" value="{{ start_date|default:'' }}">
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <input type="date" name="end_date" class="form-control" placeholder="还车日期" value="{{ end_date|default:'' }}">
+                            </div>
+                        </div>
+
+                        <!-- 价格范围 -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">价格范围（元/天）</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="number" name="min_price" class="form-control" placeholder="最低价" value="{{ filter_form.min_price.value|default:'' }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" name="max_price" class="form-control" placeholder="最高价" value="{{ filter_form.max_price.value|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 座位数 -->
+                        <div class="mb-3">
+                            <label for="seats" class="form-label fw-bold">座位数</label>
+                            <select name="seats" id="seats" class="form-select">
+                                <option value="">不限</option>
+                                <option value="2" {% if filter_form.seats.value == '2' %}selected{% endif %}>2座</option>
+                                <option value="4" {% if filter_form.seats.value == '4' %}selected{% endif %}>4座</option>
+                                <option value="5" {% if filter_form.seats.value == '5' %}selected{% endif %}>5座</option>
+                                <option value="7" {% if filter_form.seats.value == '7' %}selected{% endif %}>7座</option>
+                                <option value="8" {% if filter_form.seats.value == '8' %}selected{% endif %}>8座及以上</option>
+                            </select>
+                        </div>
+
+                        
+
+                        <!-- 燃油类型 -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">燃油类型</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fuel_type" id="fuel_all" value="" {% if not filter_form.fuel_type.value %}checked{% endif %}>
+                                <label class="form-check-label" for="fuel_all">全部</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fuel_type" id="fuel_gas" value="gasoline" {% if filter_form.fuel_type.value == 'gasoline' %}checked{% endif %}>
+                                <label class="form-check-label" for="fuel_gas">汽油</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fuel_type" id="fuel_electric" value="electric" {% if filter_form.fuel_type.value == 'electric' %}checked{% endif %}>
+                                <label class="form-check-label" for="fuel_electric">电动</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fuel_type" id="fuel_hybrid" value="hybrid" {% if filter_form.fuel_type.value == 'hybrid' %}checked{% endif %}>
+                                <label class="form-check-label" for="fuel_hybrid">混合动力</label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>应用筛选
+                        </button>
+                        {% if is_filtered %}
+                        <a href="{% url 'car_rental:car_list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                            <i class="fas fa-times me-2"></i>清除筛选
+                        </a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 车辆列表 -->
+        <div class="col-lg-9">
+            <!-- 搜索和排序工具栏 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <form method="get" action="{% url 'car_rental:car_search' %}" class="d-flex">
+                                <input type="text" name="query" class="form-control" placeholder="搜索车型、品牌..." value="{{ search_query|default:'' }}">
+                                <button type="submit" class="btn btn-primary ms-2">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="d-flex justify-content-md-end">
+                                <span class="me-2 align-self-center">共找到 <strong>{{ page_obj.paginator.count }}</strong> 辆车</span>
+                                <select class="form-select w-auto ms-2" onchange="location = this.value;">
+                                    <option value="{% url 'car_rental:car_list' %}?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>价格 低-高</option>
+                                    <option value="{% url 'car_rental:car_list' %}?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>价格 高-低</option>
+                                    <option value="{% url 'car_rental:car_list' %}?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=newest" {% if current_sort == 'newest' %}selected{% endif %}>最新上架</option>
+                                    <option value="{% url 'car_rental:car_list' %}?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=popularity" {% if current_sort == 'popularity' %}selected{% endif %}>人气优先</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 筛选标签显示 -->
+            <div class="mb-4">
+                {% if is_filtered %}
+                    <h5>已选筛选条件：</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if category %}
+                            <div class="badge bg-primary p-2">车型：{{ category.name }} <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'category' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        {% if location %}
+                            <div class="badge bg-primary p-2">取车地点：{{ location.name }} <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'location' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        {% if price_min or price_max %}
+                            <div class="badge bg-primary p-2">价格：{{ price_min|default:"0" }}元 - {{ price_max|default:"不限" }}元 <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'min_price' and key != 'max_price' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        {% if seats %}
+                            <div class="badge bg-primary p-2">座位数：{{ seats }}座 <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'seats' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        {% if transmission %}
+                            <div class="badge bg-primary p-2">变速箱：{% if transmission == 'auto' %}自动挡{% elif transmission == 'manual' %}手动挡{% else %}{{ transmission }}{% endif %} <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'transmission' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        {% if fuel_type %}
+                            <div class="badge bg-primary p-2">燃料类型：{% if fuel_type == 'gasoline' %}汽油{% elif fuel_type == 'diesel' %}柴油{% elif fuel_type == 'electric' %}电动{% elif fuel_type == 'hybrid' %}混合动力{% else %}{{ fuel_type }}{% endif %} <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'fuel_type' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        {% if start_date and end_date %}
+                            <div class="badge bg-primary p-2">日期：{{ start_date }} 至 {{ end_date }} <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'start_date' and key != 'end_date' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        {% if search_query %}
+                            <div class="badge bg-primary p-2">搜索：{{ search_query }} <a href="{{ request.path }}?{% for key, value in request.GET.items %}{% if key != 'query' and value %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="text-white text-decoration-none ms-2">×</a></div>
+                        {% endif %}
+                        <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm">清除所有筛选</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- 车辆列表展示 -->
+            <div class="row">
+                {% for car in page_obj %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow h-100">
+                        {% if car.image %}
+                            <img src="{{ car.image.url }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-car text-secondary" style="font-size: 3rem;"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ car.brand }} {{ car.model }}</h5>
+                            <div class="d-flex flex-wrap mb-3">
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-car me-1"></i>{{ car.category.name }}</span>
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-gas-pump me-1"></i>{{ car.get_fuel_type_display }}</span>
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-cog me-1"></i>{{ car.get_transmission_display }}</span>
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-users me-1"></i>{{ car.seats }}座</span>
+                            </div>
+                            <p class="card-text text-muted small">{{ car.description|truncatechars:100 }}</p>
+                        </div>
+                        <div class="card-footer bg-white border-0 d-flex justify-content-between">
+                            <a href="{% url 'car_rental:car_detail' car.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-info-circle me-1"></i>详情
+                            </a>
+                            <a href="{% url 'car_rental:rent_car' car.id %}" class="btn btn-primary">
+                                <i class="fas fa-car-side me-1"></i>立即租车
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>没有找到符合条件的车辆，请尝试调整筛选条件。
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- 分页控件 -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page=1" aria-label="First">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|slice:'5:' }}&{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

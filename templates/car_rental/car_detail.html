@@ -1,0 +1,390 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ car.brand }} {{ car.model }} - 详情{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mt-3 mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:car_list' %}">车辆列表</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ car.brand }} {{ car.model }}</li>
+        </ol>
+    </nav>
+
+    <!-- 车辆信息 -->
+    <div class="row">
+        <!-- 车辆图片 -->
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-body p-0">
+                    <div class="car-detail-img">
+                        {% if car.image %}
+                            <img src="{{ car.image.url }}" class="img-fluid w-100" alt="{{ car.brand }} {{ car.model }}">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                                <i class="fas fa-car text-secondary" style="font-size: 5rem;"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 如果有多张图片，添加图片轮播 -->
+                    {% if car.additional_images.all %}
+                    <div class="row g-2 p-2">
+                        {% for img in car.additional_images.all %}
+                        <div class="col-3">
+                            <img src="{{ img.image.url }}" class="img-thumbnail" alt="车辆图片 {{ forloop.counter }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 车辆详细信息和预订 -->
+        <div class="col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h2 class="card-title mb-0">{{ car.brand }} {{ car.model }}</h2>
+                </div>
+                <div class="card-body">
+                    <!-- 车辆基本信息 -->
+                    <div class="mb-4">
+                        <p class="mb-3">{{ car.description }}</p>
+                    
+                        <div class="row text-center g-2 mb-3">
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-2">
+                                    <i class="fas fa-car-side fs-4 text-primary mb-1"></i>
+                                    <p class="small mb-0">{{ car.category.name }}</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-2">
+                                    <i class="fas fa-gas-pump fs-4 text-primary mb-1"></i>
+                                    <p class="small mb-0">{{ car.get_fuel_type_display }}</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-2">
+                                    <i class="fas fa-cog fs-4 text-primary mb-1"></i>
+                                    <p class="small mb-0">{{ car.get_transmission_display }}</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-2">
+                                    <i class="fas fa-users fs-4 text-primary mb-1"></i>
+                                    <p class="small mb-0">{{ car.seats }}座</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 车辆状态和可租赁性 -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-info-circle me-2 text-primary"></i>车辆状态</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th class="bg-light">可租赁状态</th>
+                                        <td>
+                                            {% if car.is_available %}
+                                                <span class="text-success"><i class="fas fa-check-circle me-1"></i>可租赁</span>
+                                            {% else %}
+                                                <span class="text-danger"><i class="fas fa-times-circle me-1"></i>不可租赁</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">当前位置</th>
+                                        <td>{{ car.location.city }} {{ car.location.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">车辆编号</th>
+                                        <td>{{ car.license_plate }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">剩余数量</th>
+                                        <td>{{ car.availability_count }} 辆</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- 价格信息 -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-tag me-2 text-primary"></i>价格信息</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th class="bg-light">日租金</th>
+                                        <td>¥{{ car.daily_rate }}/天</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">押金</th>
+                                        <td>¥{{ car.deposit }}</td>
+                                    </tr>
+                                    {% if car.discount_rate %}
+                                    <tr>
+                                        <th class="bg-light">折扣</th>
+                                        <td>{{ car.discount_rate }}% OFF</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- 租车按钮 -->
+                    <div class="mt-4">
+                        {% if car.is_available and car.availability_count > 0 %}
+                            <a href="{% url 'car_rental:rent_car' car.id %}" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-car-side me-2"></i>立即租车
+                            </a>
+                        {% else %}
+                            <button class="btn btn-secondary btn-lg w-100" disabled>
+                                <i class="fas fa-ban me-2"></i>当前不可租赁
+                            </button>
+                            <p class="text-center mt-2 text-muted small">此车暂时无法租赁，请查看其他车型</p>
+                        {% endif %}
+                        
+                        <!-- AI推荐按钮 -->
+                        <a href="{% url 'car_rental:ai_recommend' %}?car_id={{ car.id }}" class="btn btn-outline-primary w-100 mt-2">
+                            <i class="fas fa-robot me-2"></i>让AI推荐类似车型
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 门店信息 -->
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2 text-primary"></i>取车门店</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ car.location.name }}</h6>
+                    <p class="text-muted mb-2">
+                        <i class="fas fa-map-pin me-2"></i>{{ car.location.address }}
+                    </p>
+                    <p class="text-muted mb-2">
+                        <i class="fas fa-phone me-2"></i>{{ car.location.phone }}
+                    </p>
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-clock me-2"></i>营业时间: {{ car.location.business_hours }}
+                    </p>
+                    {% if car.location.map_url %}
+                    <div class="text-center">
+                        <a href="{{ car.location.map_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-map me-1"></i>在地图中查看
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 车辆特性和补充信息 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="carDetailTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" aria-controls="features" aria-selected="true">
+                                <i class="fas fa-list-ul me-2"></i>车辆特性
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="rental-terms-tab" data-bs-toggle="tab" data-bs-target="#rental-terms" type="button" role="tab" aria-controls="rental-terms" aria-selected="false">
+                                <i class="fas fa-file-contract me-2"></i>租车条款
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
+                                <i class="fas fa-star me-2"></i>用户评价
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="carDetailTabsContent">
+                        <!-- 车辆特性 -->
+                        <div class="tab-pane fade show active" id="features" role="tabpanel" aria-labelledby="features-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="mb-3">基本特性</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>{{ car.get_transmission_display }}</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>{{ car.get_fuel_type_display }}</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>座位数: {{ car.seats }}</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>车型: {{ car.category.name }}</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>制造年份: {{ car.year }}</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="mb-3">舒适与便利</h5>
+                                    <ul class="list-group list-group-flush">
+                                        {% if car.has_air_conditioning %}
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>空调</li>
+                                        {% endif %}
+                                        {% if car.has_navigation %}
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>导航系统</li>
+                                        {% endif %}
+                                        {% if car.has_bluetooth %}
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>蓝牙连接</li>
+                                        {% endif %}
+                                        {% if car.has_backup_camera %}
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>倒车影像</li>
+                                        {% endif %}
+                                        {% if car.has_usb %}
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>USB充电接口</li>
+                                        {% endif %}
+                                        {% if not car.has_air_conditioning and not car.has_navigation and not car.has_bluetooth and not car.has_backup_camera and not car.has_usb %}
+                                        <li class="list-group-item text-muted">暂无特殊舒适功能</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 租车条款 -->
+                        <div class="tab-pane fade" id="rental-terms" role="tabpanel" aria-labelledby="rental-terms-tab">
+                            <h5 class="mb-3">租车条款与须知</h5>
+                            <div class="alert alert-light">
+                                <p><strong>驾驶要求：</strong></p>
+                                <ul>
+                                    <li>承租人必须年满18岁，持有效期内的驾照</li>
+                                    <li>驾龄需满1年以上</li>
+                                    <li>需提供有效身份证明和信用卡</li>
+                                </ul>
+                                
+                                <p><strong>费用说明：</strong></p>
+                                <ul>
+                                    <li>日租金: ¥{{ car.daily_rate }}/天</li>
+                                    <li>押金: ¥{{ car.deposit }}（退还车辆后返还）</li>
+                                    <li>超时费: 超过约定还车时间1小时内免费，之后按每小时¥{{ car.hourly_late_fee }}计费</li>
+                                    <li>保险费用已包含在租金中</li>
+                                </ul>
+                                
+                                <p><strong>车辆使用规定：</strong></p>
+                                <ul>
+                                    <li>严禁酒后驾驶</li>
+                                    <li>禁止违规使用车辆</li>
+                                    <li>禁止二次出租</li>
+                                    <li>车辆仅限在中国大陆境内使用</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- 用户评价 -->
+                        <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">用户评价</h5>
+                                {% if car.reviews.all %}
+                                <span class="badge bg-primary rounded-pill">{{ car.reviews.count }}条评价</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if car.reviews.all %}
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="fs-1 me-3 text-warning">{{ car.average_rating|floatformat:1 }}</div>
+                                        <div>
+                                            <div class="text-warning">
+                                                {% for i in car.average_rating_stars %}
+                                                    {% if i == 1 %}
+                                                        <i class="fas fa-star"></i>
+                                                    {% elif i == 0.5 %}
+                                                        <i class="fas fa-star-half-alt"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <small class="text-muted">基于{{ car.reviews.count }}条评价</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% for review in car.reviews.all %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle bg-light text-center me-2" style="width: 40px; height: 40px; line-height: 40px;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ review.user.username }}</h6>
+                                                    <small class="text-muted">{{ review.created_at|date:"Y-m-d" }}</small>
+                                                </div>
+                                            </div>
+                                            <div class="text-warning">
+                                                {% for i in review.rating_range %}
+                                                    <i class="fas fa-star"></i>
+                                                {% endfor %}
+                                                {% for i in review.empty_stars %}
+                                                    <i class="far fa-star"></i>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <p class="mb-1">{{ review.comment }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-light text-center">
+                                    <i class="far fa-comment-dots fs-4 mb-2"></i>
+                                    <p>暂无评价</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 相似车型推荐 -->
+    {% if similar_cars %}
+    <div class="row mt-3 mb-5">
+        <div class="col-12">
+            <h3 class="mb-4">相似车型推荐</h3>
+            <div class="row">
+                {% for similar_car in similar_cars %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow">
+                        {% if similar_car.image %}
+                            <img src="{{ similar_car.image.url }}" class="card-img-top" alt="{{ similar_car.brand }} {{ similar_car.model }}">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-car text-secondary" style="font-size: 3rem;"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ similar_car.brand }} {{ similar_car.model }}</h5>
+                            <div class="d-flex flex-wrap mb-3">
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-car me-1"></i>{{ similar_car.category.name }}</span>
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-users me-1"></i>{{ similar_car.seats }}座</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0">
+                            <a href="{% url 'car_rental:car_detail' similar_car.id %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-info-circle me-1"></i>查看详情
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

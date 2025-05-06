@@ -1,0 +1,318 @@
+{% extends 'car_rental/admin/admin_base.html' %}
+
+{% block title %}管理面板 - 用户管理{% endblock %}
+
+{% block admin_content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-users me-2"></i>用户管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print me-1"></i>打印用户列表
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="fas fa-user-plus me-1"></i>添加用户
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 筛选选项 -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="user_type" class="form-label">用户类型</label>
+                <select class="form-select" id="user_type" name="user_type">
+                    <option value="" {% if not request.GET.user_type %}selected{% endif %}>所有用户</option>
+                    <option value="customer" {% if request.GET.user_type == 'customer' %}selected{% endif %}>普通客户</option>
+                    <option value="staff" {% if request.GET.user_type == 'staff' %}selected{% endif %}>员工</option>
+                    <option value="admin" {% if request.GET.user_type == 'admin' %}selected{% endif %}>管理员</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">账户状态</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="" {% if not request.GET.status %}selected{% endif %}>所有状态</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>活跃</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>未激活</option>
+                    <option value="blocked" {% if request.GET.status == 'blocked' %}selected{% endif %}>已封禁</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="search" class="form-label">搜索</label>
+                <input type="text" class="form-control" id="search" name="search" placeholder="用户名/邮箱/手机号" value="{{ request.GET.search|default:'' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i>筛选
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 用户列表 -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>用户信息</th>
+                        <th>注册日期</th>
+                        <th>最后登录</th>
+                        <th>用户类型</th>
+                        <th>订单数</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td># {{ user.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="rounded-circle" width="40" height="40">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="ms-3">
+                                    <h6 class="mb-0">{{ user.username }}</h6>
+                                    <small class="text-muted d-block">{{ user.email }}</small>
+                                    {% if user.phone %}
+                                    <small class="text-muted">{{ user.phone }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                        <td>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                        <td>
+                            {% if user.is_superuser %}
+                            <span class="badge bg-danger">管理员</span>
+                            {% elif user.is_staff %}
+                            <span class="badge bg-info">员工</span>
+                            {% else %}
+                            <span class="badge bg-success">普通用户</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.rental_count|default:"0" }}</td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge bg-success">活跃</span>
+                            {% else %}
+                            <span class="badge bg-secondary">未激活</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    操作
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#viewUserModal{{ user.id }}"><i class="fas fa-eye me-2 text-primary"></i>查看详情</a></li>
+                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editUserModal{{ user.id }}"><i class="fas fa-edit me-2 text-warning"></i>编辑用户</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    {% if user.is_active %}
+                                    <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#blockUserModal{{ user.id }}"><i class="fas fa-ban me-2"></i>封禁账户</a></li>
+                                    {% else %}
+                                    <li><a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#activateUserModal{{ user.id }}"><i class="fas fa-check-circle me-2"></i>激活账户</a></li>
+                                    {% endif %}
+                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#resetPasswordModal{{ user.id }}"><i class="fas fa-key me-2 text-info"></i>重置密码</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-users fa-3x mb-3"></i>
+                                <p>没有找到匹配的用户</p>
+                                {% if request.GET %}
+                                <a href="{% url 'car_rental:admin_users' %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-sync-alt me-1"></i>重置筛选条件
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 分页控件 -->
+{% if users.has_other_pages %}
+<nav aria-label="用户列表分页" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if users.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if request.GET.user_type %}&user_type={{ request.GET.user_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="首页">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ users.previous_page_number }}{% if request.GET.user_type %}&user_type={{ request.GET.user_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">上一页</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;</a>
+        </li>
+        <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">上一页</a>
+        </li>
+        {% endif %}
+        
+        {% for i in users.paginator.page_range %}
+            {% if users.number == i %}
+                <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+            {% elif i > users.number|add:'-3' and i < users.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if request.GET.user_type %}&user_type={{ request.GET.user_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if users.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ users.next_page_number }}{% if request.GET.user_type %}&user_type={{ request.GET.user_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">下一页</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ users.paginator.num_pages }}{% if request.GET.user_type %}&user_type={{ request.GET.user_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="末页">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">下一页</a>
+        </li>
+        <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- 添加用户模态框 -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">添加新用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm" method="post" action="{% url 'car_rental:admin_add_user' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">电子邮箱</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">手机号码</label>
+                        <input type="tel" class="form-control" id="phone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">确认密码</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_role" class="form-label">用户角色</label>
+                        <select class="form-select" id="user_role" name="user_role">
+                            <option value="customer">普通客户</option>
+                            <option value="staff">员工</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" form="addUserForm" class="btn btn-primary">添加用户</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户详细信息模态框的模板 (实际会根据用户ID生成多个) -->
+<div class="modal fade" id="viewUserModalTemplate" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">用户详细信息</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-user fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold">用户详细信息</h5>
+                    <p class="text-muted">在实际应用中，这里会显示用户的详细资料和订单历史</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">个人信息</h6>
+                        <p><strong>用户名：</strong> <span id="detail-username">username</span></p>
+                        <p><strong>邮箱：</strong> <span id="detail-email">email@example.com</span></p>
+                        <p><strong>手机：</strong> <span id="detail-phone">13800138000</span></p>
+                        <p><strong>注册日期：</strong> <span id="detail-joined">2023-01-01</span></p>
+                        <p><strong>最后登录：</strong> <span id="detail-last-login">2023-06-01</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">账户信息</h6>
+                        <p><strong>用户类型：</strong> <span id="detail-type" class="badge bg-success">普通用户</span></p>
+                        <p><strong>账户状态：</strong> <span id="detail-status" class="badge bg-success">活跃</span></p>
+                        <p><strong>总订单数：</strong> <span id="detail-orders">5</span></p>
+                        <p><strong>总消费：</strong> <span id="detail-spent">¥3,500</span></p>
+                    </div>
+                </div>
+                
+                <h6 class="border-bottom pb-2 mb-3 mt-4">最近订单</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>订单号</th>
+                                <th>车辆</th>
+                                <th>租期</th>
+                                <th>金额</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detail-recent-orders">
+                            <tr>
+                                <td colspan="5" class="text-center">暂无订单记录</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary">查看所有订单</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

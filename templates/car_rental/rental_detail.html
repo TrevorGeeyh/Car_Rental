@@ -1,0 +1,692 @@
+{% extends 'base/base.html' %}
+
+{% block title %}订单详情 - {{ rental.order_id }} - 智能租车系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mt-3 mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:my_rentals' %}">我的订单</a></li>
+            <li class="breadcrumb-item active" aria-current="page">订单详情</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 左侧：订单详情 -->
+        <div class="col-lg-8 mb-4">
+            <!-- 订单状态卡片 -->
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-auto">
+                            <h4 class="mb-1">订单号：{{ rental.order_id }}</h4>
+                            <p class="text-muted mb-0">创建时间：{{ rental.created_at|date:"Y-m-d H:i:s" }}</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge {% if rental.status == 'completed' %}bg-success{% elif rental.status == 'ongoing' %}bg-primary{% elif rental.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %} p-2 fs-6">
+                                {{ rental.get_status_display }}
+                            </span>
+                            <p class="text-muted mb-0 small">支付状态：{{ rental.get_payment_status_display }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 车辆信息 -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-car me-2 text-primary"></i>车辆信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row">
+                        <div class="text-center mb-3 mb-md-0 me-md-4" style="width: 200px;">
+                            {% if rental.car.image %}
+                                <img src="{{ rental.car.image.url }}" alt="{{ rental.car.brand }} {{ rental.car.model }}" class="img-thumbnail mb-2" style="max-width: 100%; height: auto;">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center mb-2" style="height: 150px;">
+                                    <i class="fas fa-car text-secondary" style="font-size: 3rem;"></i>
+                                </div>
+                            {% endif %}
+                            <div class="badge bg-{{ rental.get_status_display_color }} d-block">{{ rental.get_status_display }}</div>
+                        </div>
+                        <div>
+                            <h5>{{ rental.car.brand }} {{ rental.car.model }}</h5>
+                            <div class="d-flex flex-wrap mb-3">
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-car me-1"></i>{{ rental.car.category.name }}</span>
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-gas-pump me-1"></i>{{ rental.car.get_fuel_type_display }}</span>
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-cog me-1"></i>{{ rental.car.get_transmission_display }}</span>
+                                <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-users me-1"></i>{{ rental.car.seats }}座</span>
+                            </div>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" width="130">车牌号</th>
+                                        <td>{{ rental.car.license_plate }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">日租金</th>
+                                        <td>¥{{ rental.car.daily_rate }}/天</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">车辆状态</th>
+                                        <td>{{ rental.car.get_status_display }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 租车信息 -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>租车信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h6><i class="fas fa-calendar-plus me-1 text-primary"></i>取车信息</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" width="100">取车时间</th>
+                                        <td>{{ rental.start_date|date:"Y年m月d日 H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">取车网点</th>
+                                        <td>{{ rental.pickup_location.city }} - {{ rental.pickup_location.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">网点地址</th>
+                                        <td>{{ rental.pickup_location.address }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">联系电话</th>
+                                        <td>{{ rental.pickup_location.phone }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-calendar-minus me-1 text-primary"></i>还车信息</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" width="100">还车时间</th>
+                                        <td>{{ rental.end_date|date:"Y年m月d日 H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">还车网点</th>
+                                        <td>{{ rental.return_location.city }} - {{ rental.return_location.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">网点地址</th>
+                                        <td>{{ rental.return_location.address }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">联系电话</th>
+                                        <td>{{ rental.return_location.phone }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if rental.notes %}
+                    <div class="alert alert-light">
+                        <h6><i class="fas fa-sticky-note me-1 text-primary"></i>备注信息</h6>
+                        <p class="mb-0">{{ rental.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 费用信息 -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>费用明细</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th>日租金</th>
+                                <td>¥{{ rental.car.daily_rate }}/天</td>
+                            </tr>
+                            <tr>
+                                <th>租期</th>
+                                <td>{{ rental_days }} 天</td>
+                            </tr>
+                            {% if rental.car.discount_rate %}
+                            <tr class="text-success">
+                                <th>折扣</th>
+                                <td>{{ rental.car.discount_rate }}% OFF</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <th>基本保险</th>
+                                <td>包含</td>
+                            </tr>
+                            <tr>
+                                <th>押金（可退）</th>
+                                <td>¥{{ rental.car.deposit }}</td>
+                            </tr>
+                            <tr class="table-light">
+                                <th>总计</th>
+                                <td class="fw-bold fs-5">¥{{ rental.total_price }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="d-grid gap-2 d-md-flex mb-4">
+                <a href="{% url 'car_rental:my_rentals' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>返回订单列表
+                </a>
+                
+                {% if rental.payment_status == 'pending' %}
+                <a href="{% url 'car_rental:payment' rental.id %}" class="btn btn-primary me-2">
+                    <i class="fas fa-credit-card me-2"></i>去付款
+                </a>
+                {% endif %}
+                
+                {% if rental.payment_status == 'paid' and rental.status == 'pending' %}
+                <form action="{% url 'car_rental:confirm_rental' rental.id %}" method="post" class="me-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="confirm">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-2"></i>确认订单
+                    </button>
+                </form>
+                {% endif %}
+                
+                {% if rental.status == 'confirmed' %}
+                <a href="#" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#pickupCarModal">
+                    <i class="fas fa-car me-2"></i>取车
+                </a>
+                {% endif %}
+                
+                {% if rental.status == 'ongoing' %}
+                <a href="#" class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#returnCarModal">
+                    <i class="fas fa-undo me-2"></i>还车
+                </a>
+                {% endif %}
+                
+                {% if rental.status == 'pending' or rental.status == 'confirmed' %}
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelRentalModal">
+                    <i class="fas fa-ban me-2"></i>取消订单
+                </button>
+                {% endif %}
+                
+                {% if rental.status == 'completed' %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                    <i class="fas fa-star me-2"></i>评价订单
+                </button>
+                {% endif %}
+                
+                <button class="btn btn-outline-primary ms-auto" onclick="window.print();">
+                    <i class="fas fa-print me-2"></i>打印订单
+                </button>
+            </div>
+        </div>
+        
+        <!-- 右侧：订单状态和信息 -->
+        <div class="col-lg-4">
+            <!-- 订单状态跟踪 -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-shipping-fast me-2 text-primary"></i>订单状态跟踪</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item py-3">
+                            <div class="d-flex">
+                                <div class="status-icon bg-success rounded-circle p-2 me-3">
+                                    <i class="fas fa-check text-white"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">订单创建</h6>
+                                    <p class="mb-0 text-muted small">{{ rental.created_at|date:"Y-m-d H:i:s" }}</p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="list-group-item py-3">
+                            <div class="d-flex">
+                                <div class="status-icon {% if rental.payment_status == 'paid' %}bg-success{% else %}bg-secondary{% endif %} rounded-circle p-2 me-3">
+                                    <i class="fas {% if rental.payment_status == 'paid' %}fa-check{% else %}fa-clock{% endif %} text-white"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">支付完成</h6>
+                                    <p class="mb-0 text-muted small">
+                                        {% if rental.payment_status == 'paid' %}
+                                            {{ rental.updated_at|date:"Y-m-d H:i:s" }}
+                                        {% else %}
+                                            等待支付
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="list-group-item py-3">
+                            <div class="d-flex">
+                                <div class="status-icon {% if rental.status == 'confirmed' or rental.status == 'ongoing' or rental.status == 'completed' %}bg-success{% elif rental.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} rounded-circle p-2 me-3">
+                                    <i class="fas {% if rental.status == 'confirmed' or rental.status == 'ongoing' or rental.status == 'completed' %}fa-check{% elif rental.status == 'cancelled' %}fa-times{% else %}fa-clock{% endif %} text-white"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">订单确认</h6>
+                                    <p class="mb-0 text-muted small">
+                                        {% if rental.status == 'confirmed' or rental.status == 'ongoing' or rental.status == 'completed' %}
+                                            已确认
+                                        {% elif rental.status == 'cancelled' %}
+                                            已取消
+                                        {% else %}
+                                            等待确认
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="list-group-item py-3">
+                            <div class="d-flex">
+                                <div class="status-icon {% if rental.status == 'ongoing' or rental.status == 'completed' %}bg-success{% elif rental.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} rounded-circle p-2 me-3">
+                                    <i class="fas {% if rental.status == 'ongoing' or rental.status == 'completed' %}fa-check{% elif rental.status == 'cancelled' %}fa-times{% else %}fa-clock{% endif %} text-white"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">取车</h6>
+                                    <p class="mb-0 text-muted small">
+                                        {% if rental.status == 'ongoing' or rental.status == 'completed' %}
+                                            已取车
+                                        {% elif rental.status == 'cancelled' %}
+                                            已取消
+                                        {% else %}
+                                            {{ rental.start_date|date:"Y-m-d H:i" }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="list-group-item py-3">
+                            <div class="d-flex">
+                                <div class="status-icon {% if rental.status == 'completed' %}bg-success{% elif rental.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} rounded-circle p-2 me-3">
+                                    <i class="fas {% if rental.status == 'completed' %}fa-check{% elif rental.status == 'cancelled' %}fa-times{% else %}fa-clock{% endif %} text-white"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">还车</h6>
+                                    <p class="mb-0 text-muted small">
+                                        {% if rental.status == 'completed' %}
+                                            已还车
+                                        {% elif rental.status == 'cancelled' %}
+                                            已取消
+                                        {% else %}
+                                            {{ rental.end_date|date:"Y-m-d H:i" }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 联系客服 -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-headset me-2 text-primary"></i>联系客服</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="tel:400-123-4567" class="btn btn-outline-primary">
+                            <i class="fas fa-phone-alt me-2"></i>客服热线：400-123-4567
+                        </a>
+                        <a href="{% url 'ai_customer_service:chat_interface' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-robot me-2"></i>智能客服
+                        </a>
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-comment-dots me-2"></i>在线咨询
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 温馨提示 -->
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>温馨提示</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>请按时取还车，超时将收取额外费用</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>取车时请携带身份证和驾驶证原件</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>爱护车辆，保持车内外清洁</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>遵守交通规则，安全驾驶</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 取消订单模态框 -->
+<div class="modal fade" id="cancelRentalModal" tabindex="-1" aria-labelledby="cancelRentalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelRentalModalLabel">取消订单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要取消此订单吗？</p>
+                <div class="alert alert-warning">
+                    <p><i class="fas fa-exclamation-triangle me-2"></i>请注意退款政策：</p>
+                    <ul class="mb-0">
+                        <li>取车前24小时以上取消：全额退款</li>
+                        <li>取车前12-24小时取消：退款80%</li>
+                        <li>取车前4-12小时取消：退款50%</li>
+                        <li>取车前4小时内取消：不予退款</li>
+                    </ul>
+                </div>
+                <form id="cancelRentalForm" action="{% url 'car_rental:cancel_rental' rental.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">取消原因（选填）</label>
+                        <select class="form-select" id="cancel_reason" name="cancel_reason">
+                            <option value="">请选择</option>
+                            <option value="plans_changed">行程有变</option>
+                            <option value="found_better_option">找到更好的选择</option>
+                            <option value="price_concerns">价格考虑</option>
+                            <option value="emergency">紧急情况</option>
+                            <option value="other">其他原因</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cancel_comment" class="form-label">补充说明（选填）</label>
+                        <textarea class="form-control" id="cancel_comment" name="cancel_comment" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>关闭
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+                    <i class="fas fa-ban me-1"></i>确认取消
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 评价订单模态框 -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">评价订单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reviewForm" action="{% url 'car_rental:review_rental' rental.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">车辆评分</label>
+                        <div class="rating">
+                            <div class="text-center mb-2">
+                                <div class="btn-group" role="group">
+                                    <input type="radio" class="btn-check" name="rating" id="rating1" value="1" autocomplete="off">
+                                    <label class="btn btn-outline-warning" for="rating1"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating2" value="2" autocomplete="off">
+                                    <label class="btn btn-outline-warning" for="rating2"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating3" value="3" autocomplete="off">
+                                    <label class="btn btn-outline-warning" for="rating3"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating4" value="4" autocomplete="off">
+                                    <label class="btn btn-outline-warning" for="rating4"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating5" value="5" autocomplete="off" checked>
+                                    <label class="btn btn-outline-warning" for="rating5"><i class="fas fa-star"></i></label>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <span id="ratingText" class="text-muted">很满意</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="review_comment" class="form-label">评价内容</label>
+                        <textarea class="form-control" id="review_comment" name="comment" rows="3" placeholder="请分享您对车辆和服务的评价..."></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_anonymous" name="is_anonymous">
+                        <label class="form-check-label" for="is_anonymous">
+                            匿名评价
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" id="submitReviewBtn">
+                    <i class="fas fa-paper-plane me-1"></i>提交评价
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 取车模态框 -->
+<div class="modal fade" id="pickupCarModal" tabindex="-1" aria-labelledby="pickupCarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pickupCarModalLabel">确认取车</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>取车须知</h6>
+                    <ul class="mb-0">
+                        <li>请携带有效的身份证和驾驶证原件</li>
+                        <li>检查车辆并拍照，记录车辆状态</li>
+                        <li>确认油量和里程表读数</li>
+                        <li>确认已经缴纳押金</li>
+                    </ul>
+                </div>
+                <form id="pickupCarForm" action="{% url 'car_rental:pickup_car' rental.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="pickup_condition" class="form-label">车辆状态</label>
+                        <select class="form-select" id="pickup_condition" name="pickup_condition" required>
+                            <option value="">请选择</option>
+                            <option value="excellent">完好无损</option>
+                            <option value="good">轻微瑕疵（已记录）</option>
+                            <option value="fair">有明显划痕（已记录）</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pickup_fuel_level" class="form-label">油量</label>
+                        <select class="form-select" id="pickup_fuel_level" name="pickup_fuel_level" required>
+                            <option value="">请选择</option>
+                            <option value="full">满油</option>
+                            <option value="threequarters">3/4</option>
+                            <option value="half">1/2</option>
+                            <option value="quarter">1/4</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pickup_odometer" class="form-label">里程表读数(km)</label>
+                        <input type="number" class="form-control" id="pickup_odometer" name="pickup_odometer" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmPickupBtn">
+                    <i class="fas fa-check me-1"></i>确认取车
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 还车模态框 -->
+<div class="modal fade" id="returnCarModal" tabindex="-1" aria-labelledby="returnCarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnCarModalLabel">确认还车</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>还车须知</h6>
+                    <ul class="mb-0">
+                        <li>车辆及车钥匙必须归还至指定网点</li>
+                        <li>车内外应保持清洁</li>
+                        <li>如有损伤或违章，可能会从押金中扣除费用</li>
+                    </ul>
+                </div>
+                <form id="returnCarForm" action="{% url 'car_rental:return_car' rental.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="return_condition" class="form-label">车辆状态</label>
+                        <select class="form-select" id="return_condition" name="return_condition" required>
+                            <option value="">请选择</option>
+                            <option value="excellent">完好无损</option>
+                            <option value="good">轻微瑕疵（已记录）</option>
+                            <option value="fair">有明显划痕（已记录）</option>
+                            <option value="damaged">损坏（请在备注中说明）</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="return_fuel_level" class="form-label">油量</label>
+                        <select class="form-select" id="return_fuel_level" name="return_fuel_level" required>
+                            <option value="">请选择</option>
+                            <option value="full">满油</option>
+                            <option value="threequarters">3/4</option>
+                            <option value="half">1/2</option>
+                            <option value="quarter">1/4</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="return_odometer" class="form-label">里程表读数(km)</label>
+                        <input type="number" class="form-control" id="return_odometer" name="return_odometer" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="return_notes" class="form-label">备注（可选）</label>
+                        <textarea class="form-control" id="return_notes" name="return_notes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmReturnBtn">
+                    <i class="fas fa-check me-1"></i>确认还车
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 取消订单
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const cancelRentalForm = document.getElementById('cancelRentalForm');
+        
+        if (confirmCancelBtn && cancelRentalForm) {
+            confirmCancelBtn.addEventListener('click', function() {
+                cancelRentalForm.submit();
+            });
+        }
+        
+        // 评价订单
+        const ratingInputs = document.querySelectorAll('input[name="rating"]');
+        const ratingText = document.getElementById('ratingText');
+        const submitReviewBtn = document.getElementById('submitReviewBtn');
+        const reviewForm = document.getElementById('reviewForm');
+        
+        if (ratingInputs && ratingText) {
+            const ratingTexts = {
+                '1': '很不满意',
+                '2': '不满意',
+                '3': '一般',
+                '4': '满意',
+                '5': '很满意'
+            };
+            
+            ratingInputs.forEach(function(input) {
+                input.addEventListener('change', function() {
+                    ratingText.textContent = ratingTexts[this.value];
+                });
+            });
+        }
+        
+        if (submitReviewBtn && reviewForm) {
+            submitReviewBtn.addEventListener('click', function() {
+                reviewForm.submit();
+            });
+        }
+        
+        // 取车
+        const confirmPickupBtn = document.getElementById('confirmPickupBtn');
+        const pickupCarForm = document.getElementById('pickupCarForm');
+        
+        if (confirmPickupBtn && pickupCarForm) {
+            confirmPickupBtn.addEventListener('click', function() {
+                if (validateForm(pickupCarForm)) {
+                    pickupCarForm.submit();
+                }
+            });
+        }
+        
+        // 还车
+        const confirmReturnBtn = document.getElementById('confirmReturnBtn');
+        const returnCarForm = document.getElementById('returnCarForm');
+        
+        if (confirmReturnBtn && returnCarForm) {
+            confirmReturnBtn.addEventListener('click', function() {
+                if (validateForm(returnCarForm)) {
+                    returnCarForm.submit();
+                }
+            });
+        }
+        
+        // 表单验证
+        function validateForm(form) {
+            let isValid = true;
+            const requiredInputs = form.querySelectorAll('[required]');
+            
+            requiredInputs.forEach(function(input) {
+                if (!input.value.trim()) {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+            
+            return isValid;
+        }
+    });
+</script>
+{% endblock %} 

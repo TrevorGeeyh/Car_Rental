@@ -1,0 +1,167 @@
+{% extends 'car_rental/admin/admin_base.html' %}
+
+{% block title %}管理面板 - 订单管理{% endblock %}
+
+{% block admin_content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-clipboard-list me-2"></i>订单管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i>打印报表
+        </button>
+    </div>
+</div>
+
+<!-- 筛选部分 -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">订单状态</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>所有状态</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>待处理</option>
+                    <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>已确认</option>
+                    <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>进行中</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>已完成</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>已取消</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">支付状态</label>
+                <select name="payment" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if payment_filter == 'all' %}selected{% endif %}>所有支付状态</option>
+                    <option value="pending" {% if payment_filter == 'pending' %}selected{% endif %}>待支付</option>
+                    <option value="paid" {% if payment_filter == 'paid' %}selected{% endif %}>已支付</option>
+                    <option value="refunded" {% if payment_filter == 'refunded' %}selected{% endif %}>已退款</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">开始日期</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from|default:'' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">结束日期</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to|default:'' }}">
+            </div>
+            <div class="col-12 d-flex">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter me-1"></i>应用筛选
+                </button>
+                <a href="{% url 'car_rental:admin_rentals' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync-alt me-1"></i>重置筛选
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 订单列表 -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>用户</th>
+                        <th>车辆</th>
+                        <th>租期</th>
+                        <th>总价</th>
+                        <th>订单状态</th>
+                        <th>支付状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rental in page_obj %}
+                    <tr>
+                        <td title="{{ rental.order_id }}">{{ rental.order_id|truncatechars:10 }}</td>
+                        <td>{{ rental.user.username }}</td>
+                        <td>{{ rental.car.brand }} {{ rental.car.model }}</td>
+                        <td>{{ rental.start_date|date:"m-d" }} 至 {{ rental.end_date|date:"m-d" }}</td>
+                        <td>¥{{ rental.total_price }}</td>
+                        <td>
+                            <span class="badge bg-{% if rental.status == 'completed' %}success{% elif rental.status == 'ongoing' %}primary{% elif rental.status == 'confirmed' %}info{% elif rental.status == 'cancelled' %}danger{% else %}warning{% endif %}">
+                                {{ rental.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if rental.payment_status == 'paid' %}success{% elif rental.payment_status == 'refunded' %}warning{% else %}secondary{% endif %}">
+                                {{ rental.get_payment_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ rental.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'car_rental:rental_detail' rental.order_id %}" class="btn btn-outline-primary" title="查看详情">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-success" title="更新状态">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页控件 -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="First">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Last">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-list text-muted fa-3x mb-3"></i>
+            <p>没有找到符合条件的订单</p>
+            <a href="{% url 'car_rental:admin_rentals' %}" class="btn btn-outline-primary mt-2">
+                <i class="fas fa-sync-alt me-1"></i>重置筛选
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

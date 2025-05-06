@@ -1,0 +1,173 @@
+{% extends 'car_rental/admin/admin_base.html' %}
+
+{% block title %}编辑车辆 - 管理面板{% endblock %}
+
+{% block admin_content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-edit me-2"></i>编辑车辆</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'car_rental:admin_cars' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>返回列表
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑表单 -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="row">
+                <!-- 基本信息 -->
+                <div class="col-md-6">
+                    <h5 class="mb-3">基本信息</h5>
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">车辆名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ car.name }}" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="brand" class="form-label">品牌 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="brand" name="brand" value="{{ car.brand }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="model" class="form-label">型号 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="model" name="model" value="{{ car.model }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="year" class="form-label">年份 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="year" name="year" value="{{ car.year }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="license_plate" class="form-label">车牌号 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="license_plate" name="license_plate" value="{{ car.license_plate }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">类别 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="category" name="category" required>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}" {% if car.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">所在网点 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="location" name="location" required>
+                            {% for location in locations %}
+                                <option value="{{ location.id }}" {% if car.location_id == location.id %}selected{% endif %}>{{ location.city }} - {{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 车辆详情 -->
+                <div class="col-md-6">
+                    <h5 class="mb-3">车辆详情</h5>
+                    
+                    <div class="mb-3">
+                        <label for="seats" class="form-label">座位数 <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="seats" name="seats" value="{{ car.seats }}" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="transmission" class="form-label">变速箱 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="transmission" name="transmission" required>
+                                {% for value, text in transmission_choices %}
+                                    <option value="{{ value }}" {% if car.transmission == value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fuel_type" class="form-label">燃料类型 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="fuel_type" name="fuel_type" required>
+                                {% for value, text in fuel_type_choices %}
+                                    <option value="{{ value }}" {% if car.fuel_type == value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="daily_rate" class="form-label">日租金 (¥) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control" id="daily_rate" name="daily_rate" value="{{ car.daily_rate }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mileage" class="form-label">里程数 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="mileage" name="mileage" value="{{ car.mileage }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">状态 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="status" name="status" required>
+                            {% for value, text in status_choices %}
+                                <option value="{{ value }}" {% if car.status == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">车辆图片</label>
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                {% if car.image %}
+                                    <img src="{{ car.image.url }}" class="img-thumbnail" alt="{{ car.name }}" style="max-height: 100px;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center p-3">
+                                        <i class="fas fa-car fa-2x text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <input type="file" class="form-control" id="image" name="image">
+                                <div class="form-text text-muted">留空表示不更改当前图片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 详细描述 -->
+                <div class="col-12 mt-3">
+                    <h5 class="mb-3">详细描述</h5>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">车辆描述 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required>{{ car.description }}</textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="features" class="form-label">特性和配置</label>
+                        <textarea class="form-control" id="features" name="features" rows="3">{{ car.features }}</textarea>
+                        <div class="form-text text-muted">请输入车辆特性和配置，每项可以用逗号分隔</div>
+                    </div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'car_rental:admin_cars' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-1"></i>取消
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>保存修改
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

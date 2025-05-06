@@ -1,0 +1,329 @@
+{% extends 'base/base.html' %}
+
+{% block title %}首页 - 智能租车系统{% endblock %}
+
+{% block content %}
+<!-- 轮播图 -->
+<div id="homeCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="2"></button>
+    </div>
+    <div class="carousel-inner">
+        <div class="carousel-item active">
+            <div class="hero-section bg-primary text-white">
+                <div class="container py-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="hero-title mb-4">AI智能客服租车系统</h1>
+                            <p class="hero-subtitle mb-4">让租车变得更简单、更智能，为您提供最适合的用车解决方案</p>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'car_rental:car_list' %}" class="btn btn-light btn-lg">
+                                    <i class="fas fa-car me-2"></i>浏览车辆
+                                </a>
+                                <a href="{% url 'ai_customer_service:chat_interface' %}" class="btn btn-outline-light btn-lg">
+                                    <i class="fas fa-robot me-2"></i>AI客服
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-none d-md-block">
+                            <div class="d-flex justify-content-end">
+                                <i class="fas fa-car-side" style="font-size: 12rem; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <div class="hero-section bg-success text-white">
+                <div class="container py-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="hero-title mb-4">智能推荐，找到最适合的车</h1>
+                            <p class="hero-subtitle mb-4">基于您的需求和偏好，AI助手为您精选合适车型</p>
+                            <div>
+                                <a href="{% url 'ai_customer_service:chat_interface' %}" class="btn btn-light btn-lg">
+                                    <i class="fas fa-lightbulb me-2"></i>获取推荐
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-none d-md-block">
+                            <div class="d-flex justify-content-end">
+                                <i class="fas fa-robot" style="font-size: 12rem; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <div class="hero-section bg-info text-white">
+                <div class="container py-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="hero-title mb-4">优质车型，超值价格</h1>
+                            <p class="hero-subtitle mb-4">多种车型可选，满足不同需求，新用户首单可享折扣</p>
+                            <div>
+                                <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg">
+                                    <i class="fas fa-user-plus me-2"></i>立即注册
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-none d-md-block">
+                            <div class="d-flex justify-content-end">
+                                <i class="fas fa-tag" style="font-size: 12rem; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">上一个</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#homeCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">下一个</span>
+    </button>
+</div>
+
+
+<!-- 热门车辆 -->
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-fire text-danger me-2"></i>热门车型</h2>
+        <a href="{% url 'car_rental:car_list' %}" class="btn btn-outline-primary">查看全部车型</a>
+    </div>
+    
+    <div class="row">
+        {% for car in featured_cars %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100">
+                {% if car.image %}
+                    <img src="{{ car.image.url }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}">
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-car text-secondary" style="font-size: 3rem;"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ car.brand }} {{ car.model }}</h5>
+                    <div class="d-flex mb-3">
+                        <span class="badge bg-light text-dark me-2"><i class="fas fa-car me-1"></i>{{ car.category.name }}</span>
+                        <span class="badge bg-light text-dark me-2"><i class="fas fa-cog me-1"></i>{{ car.get_transmission_display }}</span>
+                        <span class="badge bg-light text-dark"><i class="fas fa-users me-1"></i>{{ car.seats }}座</span>
+                    </div>
+                    <p class="card-text text-truncate">{{ car.description }}</p>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="car-price text-primary">¥{{ car.daily_rate }}</span>
+                        <small class="text-muted">/天</small>
+                    </div>
+                    <a href="{% url 'car_rental:car_detail' car.id %}" class="btn btn-outline-primary">查看详情</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 服务特点 -->
+<div class="container py-4">
+    <h2 class="text-center mb-5"><i class="fas fa-award text-primary me-2"></i>我们的服务特点</h2>
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="feature-box text-center p-4 h-100">
+                <div class="feature-icon bg-primary text-white mb-4">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h5>AI智能助手</h5>
+                <p class="text-muted mb-0">根据您的需求自动推荐最适合的车型，节省时间和精力</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="feature-box text-center p-4 h-100">
+                <div class="feature-icon bg-success text-white mb-4">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h5>透明定价</h5>
+                <p class="text-muted mb-0">无隐藏费用，租车价格透明，让您安心预订</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="feature-box text-center p-4 h-100">
+                <div class="feature-icon bg-info text-white mb-4">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h5>多网点取还</h5>
+                <p class="text-muted mb-0">在全国多个城市设有网点，方便您就近取还车辆</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="feature-box text-center p-4 h-100">
+                <div class="feature-icon bg-warning text-white mb-4">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h5>全天候客服</h5>
+                <p class="text-muted mb-0">24小时AI客服和专业人工团队，随时为您提供帮助</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 使用流程 -->
+<div class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-5"><i class="fas fa-route text-primary me-2"></i>租车流程</h2>
+        <div class="row">
+            <div class="col-md-3 mb-4 mb-md-0">
+                <div class="card border-0 bg-transparent text-center">
+                    <div class="card-body">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-4" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            <span>1</span>
+                        </div>
+                        <h5 class="card-title">选择车型</h5>
+                        <p class="card-text text-muted">浏览我们的车型或使用AI助手推荐最适合您的车辆</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4 mb-md-0">
+                <div class="card border-0 bg-transparent text-center">
+                    <div class="card-body">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-4" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            <span>2</span>
+                        </div>
+                        <h5 class="card-title">预订确认</h5>
+                        <p class="card-text text-muted">确认租车时间、地点，完成在线支付</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4 mb-md-0">
+                <div class="card border-0 bg-transparent text-center">
+                    <div class="card-body">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-4" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            <span>3</span>
+                        </div>
+                        <h5 class="card-title">取车</h5>
+                        <p class="card-text text-muted">在预约时间到网点出示证件和订单取车</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 bg-transparent text-center">
+                    <div class="card-body">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-4" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            <span>4</span>
+                        </div>
+                        <h5 class="card-title">还车</h5>
+                        <p class="card-text text-muted">按约定时间还车，系统自动结算，押金快速退还</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 客户评价 -->
+<div class="container py-5">
+    <h2 class="text-center mb-5"><i class="fas fa-comments text-primary me-2"></i>客户评价</h2>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-body">
+                    <div class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-light" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user text-primary fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="mb-0">王先生</h5>
+                            <p class="text-muted mb-0">北京</p>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="card-text">AI推荐功能非常实用，根据我的家庭出游需求推荐了一款空间大、油耗低的SUV，非常满意，体验很棒！</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-body">
+                    <div class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-light" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user text-primary fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="mb-0">李女士</h5>
+                            <p class="text-muted mb-0">上海</p>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="card-text">这是我第一次使用智能租车系统，界面简洁清晰，操作很简单。取还车流程也很便捷，车辆状况很好。</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-body">
+                    <div class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-light" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user text-primary fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="mb-0">张先生</h5>
+                            <p class="text-muted mb-0">广州</p>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                    </div>
+                    <p class="card-text">AI客服回答问题很专业，特别是在介绍不同车型的优缺点时很客观，帮我选到了最适合的商务用车。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI客服 -->
+<div class="bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mb-4 mb-lg-0">
+                <h2><i class="fas fa-robot me-2"></i>智能AI客服，全天候为您服务</h2>
+                <p class="lead mb-0">有任何租车问题？我们的AI客服能够回答您的问题，推荐适合您的车型，并协助您完成整个租车流程。</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{% url 'ai_customer_service:chat_interface' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-comments me-2"></i>立即咨询
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

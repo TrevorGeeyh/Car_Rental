@@ -1,0 +1,316 @@
+{% extends 'car_rental/admin/admin_base.html' %}
+{% load custom_filters %}
+
+{% block title %}管理面板 - 数据统计{% endblock %}
+
+{% block admin_content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-chart-bar me-2"></i>数据统计</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print me-1"></i>打印报表
+            </button>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="periodDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-calendar me-1"></i>最近30天
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="periodDropdown">
+                <li><a class="dropdown-item" href="#">最近7天</a></li>
+                <li><a class="dropdown-item" href="#">最近30天</a></li>
+                <li><a class="dropdown-item" href="#">最近90天</a></li>
+                <li><a class="dropdown-item" href="#">今年</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#">自定义时间段</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-muted">总收入</h5>
+                <h2 class="text-primary mb-0">¥{{ total_revenue.total_price__sum|default:"0" }}</h2>
+                <div class="text-success mt-2">
+                    <i class="fas fa-arrow-up me-1"></i>{{ total_orders }} 个订单
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-muted">每辆车平均收入</h5>
+                <h2 class="text-primary mb-0">¥{{ car_avg_revenue }}</h2>
+                <div class="text-info mt-2">
+                    <i class="fas fa-car me-1"></i>总计 {{ total_cars }} 辆车
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-muted">订单完成率</h5>
+                <h2 class="text-primary mb-0">{{ completion_rate }}%</h2>
+                <div class="text-success mt-2">
+                    <i class="fas fa-check-circle me-1"></i>{{ completed_orders }}/{{ total_orders }} 个订单
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-muted">平均租期</h5>
+                <h2 class="text-primary mb-0">{{ avg_rental_days }}天</h2>
+                <div class="text-info mt-2">
+                    <i class="fas fa-calendar-alt me-1"></i>基于已完成订单
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 图表和详细数据 -->
+<div class="row">
+    <!-- 车辆类别分布 -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>车辆类别分布</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>类别</th>
+                                <th>车辆数量</th>
+                                <th>占比</th>
+                                <th>可用率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in category_stats %}
+                            <tr>
+                                <td>{{ category.name }}</td>
+                                <td>{{ category.car_count }}</td>
+                                <td>{{ category.percentage }}%</td>
+                                <td>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ category.available_percent }}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">暂无数据</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 热门车型 -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0"><i class="fas fa-fire me-2 text-danger"></i>热门车型</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>车型</th>
+                                <th>品牌</th>
+                                <th>租赁次数</th>
+                                <th>受欢迎度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for car in popular_cars %}
+                            <tr>
+                                <td>{{ car.model }}</td>
+                                <td>{{ car.brand }}</td>
+                                <td>{{ car.rental_count }}</td>
+                                <td>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ car.popularity_percent }}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">暂无数据</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 热门地点 -->
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2 text-info"></i>热门网点</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>网点名称</th>
+                                <th>城市</th>
+                                <th>取车次数</th>
+                                <th>还车次数</th>
+                                <th>车辆数量</th>
+                                <th>使用率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for location in popular_locations %}
+                            <tr>
+                                <td>{{ location.name }}</td>
+                                <td>{{ location.city }}</td>
+                                <td>{{ location.pickup_count }}</td>
+                                <td>{{ location.return_count }}</td>
+                                <td>{{ location.car_count }}</td>
+                                <td>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ location.usage_percent }}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">暂无数据</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 月度订单和收入统计 -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2 text-success"></i>月度统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>月份</th>
+                                <th>订单数量</th>
+                                <th>订单增长</th>
+                                <th>收入（元）</th>
+                                <th>收入增长</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for month in month_stats %}
+                            <tr>
+                                <td>{{ month.month }}</td>
+                                <td>{{ month.count }}</td>
+                                <td>
+                                    {% if forloop.counter0 > 0 %}
+                                        {% with prev_index=forloop.counter0|subtract:1 %}
+                                            {% with prev=month_stats|get_item:prev_index %}
+                                                {% if prev.count > 0 %}
+                                                    {% with growth=month.count|subtract:prev.count|percentage:prev.count %}
+                                                        {% if growth > 0 %}
+                                                            <span class="text-success"><i class="fas fa-arrow-up me-1"></i>{{ growth }}%</span>
+                                                        {% elif growth < 0 %}
+                                                            <span class="text-danger"><i class="fas fa-arrow-down me-1"></i>{{ growth|absolute }}%</span>
+                                                        {% else %}
+                                                            <span class="text-muted">0%</span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ month.revenue }}</td>
+                                <td>
+                                    {% if forloop.counter0 > 0 %}
+                                        {% with prev_index=forloop.counter0|subtract:1 %}
+                                            {% with prev=month_stats|get_item:prev_index %}
+                                                {% if prev.revenue > 0 %}
+                                                    {% with growth=month.revenue|subtract:prev.revenue|percentage:prev.revenue %}
+                                                        {% if growth > 0 %}
+                                                            <span class="text-success"><i class="fas fa-arrow-up me-1"></i>{{ growth }}%</span>
+                                                        {% elif growth < 0 %}
+                                                            <span class="text-danger"><i class="fas fa-arrow-down me-1"></i>{{ growth|absolute }}%</span>
+                                                        {% else %}
+                                                            <span class="text-muted">0%</span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">暂无数据</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 可视化图表 (简化实现) -->
+                <div class="mt-4">
+                    <div class="border rounded p-3">
+                        <h6 class="text-center mb-3">月度数据可视化</h6>
+                        <div class="d-flex align-items-end" style="height: 200px;">
+                            {% for month in month_stats %}
+                                {% with max_count=25 %}
+                                    {% with height=month.count|percentage:max_count %}
+                                        <div class="d-flex flex-column align-items-center mx-1" style="flex: 1;">
+                                            <div class="bg-primary rounded-top" style="width: 30px; height: {{ height|default:5 }}px;"></div>
+                                            <small class="text-muted mt-1">{{ month.display_month }}</small>
+                                        </div>
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3 text-muted">
+                            <small>* 图表高度根据订单数量比例计算</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

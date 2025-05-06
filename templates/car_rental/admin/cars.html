@@ -1,0 +1,327 @@
+{% extends 'car_rental/admin/admin_base.html' %}
+
+{% block title %}管理面板 - 车辆管理{% endblock %}
+
+{% block admin_content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-car me-2"></i>车辆管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'car_rental:admin_add_car' %}" class="btn btn-sm btn-primary me-2">
+            <i class="fas fa-plus-circle me-1"></i>添加车辆
+        </a>
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print me-1"></i>打印列表
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportToCSV()">
+                <i class="fas fa-download me-1"></i>导出CSV
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 筛选部分 -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">车辆状态</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>所有状态</option>
+                    <option value="available" {% if status_filter == 'available' %}selected{% endif %}>可用</option>
+                    <option value="rented" {% if status_filter == 'rented' %}selected{% endif %}>已租出</option>
+                    <option value="maintenance" {% if status_filter == 'maintenance' %}selected{% endif %}>维护中</option>
+                    <option value="unavailable" {% if status_filter == 'unavailable' %}selected{% endif %}>不可用</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">车辆类别</label>
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">所有类别</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category_filter == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">所在网点</label>
+                <select name="location" class="form-select" onchange="this.form.submit()">
+                    <option value="">所有网点</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}" {% if location_filter == location.id|stringformat:"s" %}selected{% endif %}>{{ location.city }} - {{ location.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i>应用筛选
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 车辆列表 -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>图片</th>
+                        <th>品牌/型号</th>
+                        <th>车牌号</th>
+                        <th>类别</th>
+                        <th>日租金</th>
+                        <th>状态</th>
+                        <th>所在网点</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for car in page_obj %}
+                    <tr>
+                        <td>{{ car.id }}</td>
+                        <td style="width: 60px">
+                            {% if car.image %}
+                                <img src="{{ car.image.url }}" class="img-thumbnail" style="width: 50px; height: 40px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 40px;">
+                                    <i class="fas fa-car text-secondary"></i>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ car.brand }} {{ car.model }}</td>
+                        <td>{{ car.license_plate }}</td>
+                        <td>{{ car.category.name }}</td>
+                        <td>¥{{ car.daily_rate }}</td>
+                        <td>
+                            <span class="badge bg-{% if car.status == 'available' %}success{% elif car.status == 'rented' %}primary{% elif car.status == 'maintenance' %}warning{% else %}danger{% endif %}">
+                                {{ car.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ car.location.city }} - {{ car.location.name }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'car_rental:car_detail' car.id %}" class="btn btn-outline-primary" title="查看">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'car_rental:admin_edit_car' car.id %}" class="btn btn-outline-secondary" title="编辑">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <!-- 状态切换按钮 -->
+                                <button type="button" 
+                                        class="btn btn-outline-{% if car.status == 'available' %}warning{% else %}success{% endif %} toggle-status-btn" 
+                                        title="{% if car.status == 'available' %}标记为维护{% else %}标记为可用{% endif %}"
+                                        data-car-id="{{ car.id }}"
+                                        data-current-status="{{ car.status }}">
+                                    <i class="fas fa-{% if car.status == 'available' %}wrench{% else %}check{% endif %}"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页控件 -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if location_filter %}&location={{ location_filter }}{% endif %}" aria-label="First">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if location_filter %}&location={{ location_filter }}{% endif %}" aria-label="Previous">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if location_filter %}&location={{ location_filter }}{% endif %}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if location_filter %}&location={{ location_filter }}{% endif %}" aria-label="Next">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if location_filter %}&location={{ location_filter }}{% endif %}" aria-label="Last">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-car text-muted fa-3x mb-3"></i>
+            <p>没有找到符合条件的车辆</p>
+            <a href="{% url 'car_rental:admin_cars' %}" class="btn btn-outline-primary mt-2">
+                <i class="fas fa-sync-alt me-1"></i>重置筛选
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 导出CSV函数
+    function exportToCSV() {
+        // 获取表格数据
+        const table = document.querySelector('table');
+        if (!table) return;
+        
+        const rows = Array.from(table.querySelectorAll('tr'));
+        
+        // 构建CSV内容
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        // 表头
+        const headers = Array.from(rows[0].querySelectorAll('th')).map(th => {
+            // 移除操作列
+            const text = th.textContent.trim();
+            return text === '操作' ? '' : `"${text}"`;
+        }).filter(Boolean);
+        csvContent += headers.join(',') + '\r\n';
+        
+        // 表格内容
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const cols = Array.from(row.querySelectorAll('td')).map((td, index) => {
+                // 跳过操作列
+                if (index === headers.length) return '';
+                
+                // 获取单元格文本
+                let text = td.textContent.trim();
+                // 特殊处理状态列
+                if (td.querySelector('.badge')) {
+                    text = td.querySelector('.badge').textContent.trim();
+                }
+                return `"${text}"`;
+            }).filter(Boolean);
+            
+            csvContent += cols.join(',') + '\r\n';
+        }
+        
+        // 创建下载链接
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `车辆列表_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`);
+        document.body.appendChild(link);
+        
+        // 触发下载
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取CSRF令牌
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+        
+        // 绑定所有状态切换按钮的点击事件
+        document.querySelectorAll('.toggle-status-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const carId = this.getAttribute('data-car-id');
+                const button = this;
+                
+                // 显示加载状态
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+                
+                // 发送AJAX请求
+                fetch(`/my-admin/cars/toggle-status/${carId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 更新UI
+                        if (data.new_status === 'available') {
+                            button.classList.remove('btn-outline-success');
+                            button.classList.add('btn-outline-warning');
+                            button.innerHTML = '<i class="fas fa-wrench"></i>';
+                            button.title = '标记为维护';
+                            button.closest('tr').querySelector('td:nth-child(7) span').className = 'badge bg-success';
+                            button.closest('tr').querySelector('td:nth-child(7) span').textContent = data.status_display;
+                        } else {
+                            button.classList.remove('btn-outline-warning');
+                            button.classList.add('btn-outline-success');
+                            button.innerHTML = '<i class="fas fa-check"></i>';
+                            button.title = '标记为可用';
+                            button.closest('tr').querySelector('td:nth-child(7) span').className = 'badge bg-warning';
+                            button.closest('tr').querySelector('td:nth-child(7) span').textContent = data.status_display;
+                        }
+                        
+                        // 显示成功消息
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                        alertDiv.innerHTML = `
+                            ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.querySelector('.card-body').prepend(alertDiv);
+                        
+                        // 自动关闭提示
+                        setTimeout(() => {
+                            alertDiv.remove();
+                        }, 5000);
+                    } else {
+                        // 恢复按钮状态
+                        button.innerHTML = originalContent;
+                        alert('操作失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    button.innerHTML = originalContent;
+                    alert('发生错误，请重试');
+                })
+                .finally(() => {
+                    button.disabled = false;
+                });
+            });
+        });
+    });
+</script>
+{% endblock %} 

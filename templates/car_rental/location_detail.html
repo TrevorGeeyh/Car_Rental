@@ -1,0 +1,152 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ location.name }} - 网点详情 - 智能租车系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mt-3 mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:home' %}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_rental:location_list' %}">租车网点</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ location.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 网点信息 -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title h4 mb-0">{{ location.name }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <i class="fas fa-map-marker-alt text-primary fs-3"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">地址</h5>
+                                <p class="mb-0 text-muted">{{ location.city }} {{ location.address }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <i class="fas fa-phone text-primary fs-3"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">联系电话</h5>
+                                <p class="mb-0 text-muted">{{ location.phone }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <i class="fas fa-clock text-primary fs-3"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">营业时间</h5>
+                                <p class="mb-0 text-muted">{{ location.business_hours }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                </div>
+            </div>
+        </div>
+        
+        <!-- 可用车辆 -->
+        <div class="col-lg-7">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0"><i class="fas fa-car me-2 text-primary"></i>可租用车辆</h4>
+                        <span class="badge bg-success">{{ available_cars.count }} 辆可用</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if available_cars %}
+                        <div class="row">
+                            {% for car in available_cars %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow-sm h-100">
+                                    {% if car.image %}
+                                        <img src="{{ car.image.url }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}" style="height: 160px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 160px;">
+                                            <i class="fas fa-car text-secondary" style="font-size: 3rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ car.brand }} {{ car.model }}</h5>
+                                        <div class="d-flex flex-wrap mb-2">
+                                            <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-car me-1"></i>{{ car.category.name }}</span>
+                                            <span class="badge bg-light text-dark me-2 mb-1"><i class="fas fa-cog me-1"></i>{{ car.get_transmission_display }}</span>
+                                            <span class="badge bg-light text-dark mb-1"><i class="fas fa-users me-1"></i>{{ car.seats }}座</span>
+                                        </div>
+                                        <p class="card-text text-primary fw-bold mb-3">¥{{ car.daily_rate }}/天</p>
+                                        <div class="d-grid gap-2">
+                                            <a href="{% url 'car_rental:car_detail' car.id %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-info-circle me-1"></i>查看详情
+                                            </a>
+                                            <a href="{% url 'car_rental:rent_car' car.id %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-shopping-cart me-1"></i>立即租车
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>该网点目前没有可用车辆，请选择其他网点或稍后再试。
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 热门推荐 -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-white">
+                    <h4 class="card-title mb-0"><i class="fas fa-fire me-2 text-danger"></i>附近网点</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light mb-0">
+                        <p class="mb-3"><i class="fas fa-map-marker-alt me-2 text-primary"></i>在 <strong>{{ location.city }}</strong> 还有其他网点可供选择：</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{% url 'car_rental:location_list' %}?query={{ location.city }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-list me-1"></i>查看所有 {{ location.city }} 网点
+                            </a>
+                            <a href="{% url 'car_rental:car_list' %}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-car me-1"></i>查看所有可用车辆
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if location.latitude and location.longitude %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化地图
+        var map = L.map('location-map').setView([{{ location.latitude }}, {{ location.longitude }}], 15);
+        
+        // 添加地图图层
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // 添加标记
+        var marker = L.marker([{{ location.latitude }}, {{ location.longitude }}]).addTo(map);
+        marker.bindPopup("<b>{{ location.name }}</b><br>{{ location.address }}").openPopup();
+    });
+</script>
+{% endif %}
+{% endblock %} 

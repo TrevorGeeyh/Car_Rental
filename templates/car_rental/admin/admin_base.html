@@ -1,0 +1,61 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏导航 -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/my-admin/dashboard/' %}active{% endif %}" href="{% url 'car_rental:admin_dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i>仪表盘
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/my-admin/cars/' in request.path %}active{% endif %}" href="{% url 'car_rental:admin_cars' %}">
+                            <i class="fas fa-car me-2"></i>车辆管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/my-admin/rentals/' %}active{% endif %}" href="{% url 'car_rental:admin_rentals' %}">
+                            <i class="fas fa-clipboard-list me-2"></i>订单管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/my-admin/stats/' %}active{% endif %}" href="{% url 'car_rental:admin_stats' %}">
+                            <i class="fas fa-chart-bar me-2"></i>数据统计
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/" target="_blank">
+                            <i class="fas fa-cogs me-2"></i>Django管理
+                        </a>
+                    </li>
+                </ul>
+                
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>快捷操作</span>
+                </h6>
+                <ul class="nav flex-column mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'car_rental:admin_add_car' %}">
+                            <i class="fas fa-plus-circle me-2"></i>添加车辆
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'car_rental:home' %}">
+                            <i class="fas fa-home me-2"></i>返回前台
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
